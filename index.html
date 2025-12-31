@@ -3,47 +3,217 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FEUD HOST - Create & Play</title>
+  <title>FEUD MASTER PRO</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Outfit:wght@900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #020617;
+      --card: #0f172a;
+      --accent: #2563eb;
+      --amber: #f59e0b;
+    }
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #020617;
-      color: white;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: #f8fafc;
       margin: 0;
       overflow-x: hidden;
     }
-    .game-font { font-family: 'Luckiest Guy', cursive; }
-    .perspective-1000 { perspective: 1000px; }
-    .transform-style-3d { transform-style: preserve-3d; }
-    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-    .rotate-x-180 { transform: rotateX(180deg); }
+    .game-title { font-family: 'Outfit', sans-serif; }
     
-    @keyframes strike-shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px) rotate(-5deg); }
-      75% { transform: translateX(10px) rotate(5deg); }
+    /* Card Flip Animation */
+    .card-wrap {
+      height: 5.5rem;
+      perspective: 1200px;
     }
-    .animate-strike { animation: strike-shake 0.1s ease-in-out infinite; }
-    
-    @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    .animate-float { animation: floating 3s ease-in-out infinite; }
-    
-    @keyframes buzzer-pulse {
-      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-      70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+      cursor: pointer;
     }
-    .animate-buzzer-ready { animation: buzzer-pulse 2s infinite; }
+    .card-wrap.revealed .card-inner { transform: rotateX(180deg); }
+    
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      border-radius: 1rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-front {
+      background: linear-gradient(145deg, #1e3a8a, #1d4ed8);
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: rgba(255,255,255,0.2);
+    }
+    
+    .card-front.host-mode {
+      background: linear-gradient(145deg, #0f172a, #1e293b);
+      border: 1px dashed rgba(255,255,255,0.2);
+      color: white;
+      font-size: 1rem;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
 
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    .glass-effect {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(12px);
+    .card-back {
+      background: linear-gradient(145deg, #fbbf24, #f59e0b);
+      color: #451a03;
+      transform: rotateX(180deg);
+      justify-content: space-between;
+      padding: 0 1.75rem;
+    }
+
+    .btn {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 0.75rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-primary { background: var(--accent); color: white; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 25px rgba(37, 99, 235, 0.5); }
+    .btn-secondary { background: #1e293b; color: white; border: 1px solid #334155; }
+    .btn-danger { background: #ef4444; color: white; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-ghost { background: transparent; color: #94a3b8; }
+    .btn-ghost:hover { color: white; background: rgba(255,255,255,0.05); }
+    
+    .glass {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
+
+    /* Buzzer Pulse */
+    @keyframes buzz-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); }
+      50% { transform: scale(1.02); }
+      70% { box-shadow: 0 0 0 40px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
+    }
+    .buzzer-active { animation: buzz-pulse 2s infinite; }
+
+    /* Full Screen Strike Animation */
+    @keyframes strike-in {
+      0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+      40% { transform: scale(1.4) rotate(10deg); opacity: 1; }
+      60% { transform: scale(1) rotate(0deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes strike-fade-out {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .strike-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      animation: strike-fade-out 0.3s 1.2s forwards;
+    }
+    .animate-strike { 
+      animation: strike-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      filter: drop-shadow(0 0 40px rgba(239, 68, 68, 0.6));
+    }
+    
+    .shimmer {
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite linear;
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Custom Avatar Grid */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      padding: 16px;
+      background: #1e293b;
+      border-radius: 24px;
+      border: 2px solid #334155;
+    }
+    .avatar-btn {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .avatar-btn:hover { background: #334155; transform: scale(1.1); }
+    .avatar-btn.selected { background: #2563eb; transform: scale(1.1); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
+
+    /* Podium Styles */
+    .podium-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 30px;
+      height: 400px;
+      margin-top: 80px;
+      perspective: 1000px;
+    }
+    .podium-place {
+      width: 240px;
+      border-radius: 2rem 2rem 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 30px;
+      position: relative;
+      transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+      transform-style: preserve-3d;
+    }
+    .podium-1 { background: linear-gradient(180deg, #fcd34d, #b45309); height: 100%; z-index: 10; border: 4px solid #fbbf24; }
+    .podium-2 { background: linear-gradient(180deg, #e2e8f0, #475569); height: 75%; border: 4px solid #94a3b8; }
+    .podium-3 { background: linear-gradient(180deg, #f97316, #7c2d12); height: 50%; border: 4px solid #ea580c; }
+
+    /* Confetti animation */
+    @keyframes confetti-fall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      z-index: 100;
+      animation: confetti-fall 4s linear infinite;
+    }
+
+    .floating-player {
+      animation: float-up 2s ease-out forwards;
+      opacity: 0;
+    }
+    @keyframes float-up {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
   </style>
   <script type="importmap">
   {
@@ -62,626 +232,676 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useCallback, useRef } from 'react';
+    import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
     import { createRoot } from 'react-dom/client';
     import { 
-      Play, Layout, Trash2, Users, LogIn, LogOut, User as UserIcon,
-      Shield, ChevronRight, XCircle, Trophy, Star, Zap, X as LucideX, 
-      RefreshCcw, Palette, CheckCircle2, Plus, Sparkles, Save, ChevronLeft, 
-      AlertCircle, Radio, Check, Mail, Lock, ChevronDown
+      Play, Shield, ChevronLeft, Zap, X, Plus, Save, Sparkles, Loader2, User, Users, LogOut, Edit3, CheckCircle2, ChevronRightCircle, Trophy, Medal, Star, ArrowLeft 
     } from 'lucide-react';
     import { GoogleGenAI, Type } from "@google/genai";
 
-    // --- UTILS ---
-    const generateId = () => Math.random().toString(36).substr(2, 9);
+    const AVATARS = ["🦁", "🐯", "🦒", "🦊", "🐶", "🐱", "🐨", "🐸", "🐵", "🦄", "🐼", "🤖", "👻", "👾", "🦖", "🐧", "🐷", "🦋", "🍄", "🥑", "🐙", "🦀", "🚀", "🍕", "🍔"];
+    const genId = () => Math.random().toString(36).substr(2, 9);
 
-    // --- MULTIPLAYER SERVICE ---
-    class MultiplayerService {
+    class SyncService {
       constructor(roomCode, onMessage) {
-        this.channel = new BroadcastChannel("feud_room_" + roomCode);
-        this.onMessageCallback = onMessage;
-        this.channel.onmessage = (event) => this.onMessageCallback(event.data);
+        this.roomCode = roomCode;
+        this.onMessage = onMessage;
+        this.id = genId();
+        this.storageKey = `feud_v3_room_${roomCode}`;
+        this.channel = new BroadcastChannel(`feud_v3_chan_${roomCode}`);
+        this.channel.onmessage = (e) => this._receive(e.data);
+        this._storageHandler = (e) => {
+          if (e.key === this.storageKey && e.newValue) this._receive(JSON.parse(e.newValue));
+        };
+        window.addEventListener('storage', this._storageHandler);
       }
-      send(message) {
-        if (this.channel) this.channel.postMessage(message);
+      _receive(data) { if (data._from !== this.id) this.onMessage(data); }
+      send(type, payload = {}) {
+        const msg = { type, payload, _from: this.id, _t: Date.now() };
+        this.channel.postMessage(msg);
+        localStorage.setItem(this.storageKey, JSON.stringify(msg));
       }
       close() {
-        if (this.channel) {
-          this.channel.close();
-          this.channel = null;
-        }
+        this.channel.close();
+        window.removeEventListener('storage', this._storageHandler);
       }
     }
 
-    // --- TRANSLATIONS ---
-    const translations = {
-      en: { 
-        appName: "FEUD HOST", branding: "FAMILY FEUD", joinRoom: "Join Room", 
-        newBoard: "New Board", login: "Login", logout: "Logout", createBoard: "Create Board", 
-        joinAsPlayer: "Join as Player", yourBoards: "Your Saved Boards", publicSamples: "Public Samples", 
-        roomCode: "Room Code", yourName: "Your Name", pickTeam: "Pick a Team", joinGame: "JOIN GAME", 
-        backHome: "Back Home", strike: "Strike", nextQuestion: "Next Question", 
-        startBroadcast: "START BROADCAST", cancelSession: "Cancel Session", 
-        backToMenu: "Back to Menu", customize: "Customize", points: "POINTS", 
-        saveGame: "Save Game", aiAssistant: "AI Survey Assistant", createButton: "CREATE BOARD", 
-        gameTheme: "Game Theme (e.g. Marvel Movies...)", boardEditor: "BOARD EDITOR", 
-        competitors: "Competitors", roundRules: "Round Rules", welcomeBack: "Welcome Back!",
-        accountCreated: "Account Created!", redirecting: "Redirecting...", hostLogin: "Host Login", 
-        registerHost: "Register Host", email: "Email", password: "Password", displayName: "Name", 
-        enterDashboard: "ENTER DASHBOARD", createAccount: "CREATE ACCOUNT", 
-        newHere: "New? Register", alreadyHost: "Have account? Login", readyToWin: "Ready!", locked: "Locked!"
-      },
-      ru: { 
-        appName: "FEUD HOST", branding: "FAMILY FEUD", joinRoom: "Войти", 
-        newBoard: "Новая игра", login: "Вход", logout: "Выход", createBoard: "Создать игру", 
-        joinAsPlayer: "Играть", yourBoards: "Ваши игры", publicSamples: "Примеры", 
-        roomCode: "Код комнаты", yourName: "Имя", pickTeam: "Команда", joinGame: "ВСТУПИТЬ", 
-        backHome: "Назад", strike: "Промах", nextQuestion: "След. вопрос", 
-        startBroadcast: "НАЧАТЬ", cancelSession: "Отмена", 
-        backToMenu: "В меню", customize: "Образ", points: "ОЧКИ", 
-        saveGame: "Сохранить", aiAssistant: "ИИ Помощник", createButton: "СОЗДАТЬ", 
-        gameTheme: "Тема (напр. Марвел...)", boardEditor: "РЕДАКТОР", 
-        competitors: "Участники", roundRules: "Правила", welcomeBack: "С возвращением!",
-        accountCreated: "Готово!", redirecting: "Загрузка...", hostLogin: "Вход", 
-        registerHost: "Регистрация", email: "Email", password: "Пароль", displayName: "Имя", 
-        enterDashboard: "ВОЙТИ", createAccount: "СОЗДАТЬ", 
-        newHere: "Регистрация", alreadyHost: "Есть аккаунт?", readyToWin: "Готов!", locked: "Блок!"
-      },
-      es: { 
-        appName: "FEUD HOST", branding: "FAMILY FEUD", joinRoom: "Unirse", 
-        newBoard: "Nuevo", login: "Entrar", logout: "Salir", createBoard: "Crear", 
-        joinAsPlayer: "Jugar", yourBoards: "Mis Tableros", publicSamples: "Ejemplos", 
-        roomCode: "Código", yourName: "Nombre", pickTeam: "Equipo", joinGame: "ENTRAR", 
-        backHome: "Inicio", strike: "Error", nextQuestion: "Siguiente", 
-        startBroadcast: "INICIAR", cancelSession: "Cancelar", 
-        backToMenu: "Menú", customize: "Perfil", points: "PUNTOS", 
-        saveGame: "Guardar", aiAssistant: "IA Asistente", createButton: "CREAR", 
-        gameTheme: "Tema (ej. Cine...)", boardEditor: "EDITOR", 
-        competitors: "Equipos", roundRules: "Reglas", welcomeBack: "¡Hola!",
-        accountCreated: "¡Listo!", redirecting: "Cargando...", hostLogin: "Entrar", 
-        registerHost: "Registro", email: "Email", password: "Clave", displayName: "Nombre", 
-        enterDashboard: "ENTRAR", createAccount: "CREAR", 
-        newHere: "Regístrate", alreadyHost: "¿Ya tienes cuenta?", readyToWin: "¡Listo!", locked: "¡Bloqueo!"
-      }
-    };
-
-    // --- GEMINI SERVICE ---
-    async function generateFeudGame(topic, lang = 'en') {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const langPrompt = lang === 'ru' ? 'in Russian' : lang === 'es' ? 'in Spanish' : 'in English';
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: "Generate a Family Feud style game for: " + topic + " " + langPrompt + ". 5 questions, 6-8 answers each. JSON only.",
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              questions: { 
-                type: Type.ARRAY, 
-                items: { 
-                  type: Type.OBJECT, 
-                  properties: { 
-                    prompt: { type: Type.STRING }, 
-                    answers: { 
-                      type: Type.ARRAY, 
-                      items: { 
-                        type: Type.OBJECT, 
-                        properties: { 
-                          text: { type: Type.STRING }, 
-                          points: { type: Type.INTEGER } 
-                        },
-                        required: ["text", "points"]
-                      } 
-                    } 
-                  },
-                  required: ["prompt", "answers"]
-                } 
-              }
-            },
-            required: ["title", "questions"]
-          }
+    const MOCK_BOARD = {
+      id: 'm1',
+      title: "Pop Culture Mania",
+      teams: [
+        { id: 't1', name: 'TEAM ALPHA', color: '#2563eb' },
+        { id: 't2', name: 'TEAM OMEGA', color: '#dc2626' }
+      ],
+      questions: [
+        {
+          id: 'q1',
+          prompt: "Name a movie that everyone has seen at least once",
+          answers: [
+            { id: 'a1', text: "Titanic", points: 45 },
+            { id: 'a2', text: "Star Wars", points: 32 },
+            { id: 'a3', text: "The Lion King", points: 18 },
+            { id: 'a4', text: "Home Alone", points: 12 },
+            { id: 'a5', text: "Toy Story", points: 8 },
+            { id: 'a6', text: "Jurassic Park", points: 5 }
+          ]
+        },
+        {
+          id: 'q2',
+          prompt: "Something you find in a messy teenager's room",
+          answers: [
+            { id: 'a7', text: "Clothes", points: 50 },
+            { id: 'a8', text: "Trash / Food", points: 25 },
+            { id: 'a9', text: "Electronics", points: 10 },
+            { id: 'a10', text: "Dirty Socks", points: 8 },
+            { id: 'a11', text: "Schoolwork", points: 4 },
+            { id: 'a12', text: "Unmade Bed", points: 3 }
+          ]
         }
-      });
-      const rawData = JSON.parse(response.text.trim());
-      return {
-        id: generateId(),
-        title: rawData.title,
-        createdAt: Date.now(),
-        teams: [{id: 't1', name: 'Team 1', color: '#2563eb'}, {id: 't2', name: 'Team 2', color: '#dc2626'}],
-        strikePenalty: 25,
-        questions: rawData.questions.map(q => ({
-          id: generateId(),
-          prompt: q.prompt,
-          answers: q.answers.map(a => ({
-            id: generateId(),
-            text: a.text,
-            points: a.points,
-            revealed: false
-          }))
-        }))
-      };
-    }
-
-    // --- SHARED COMPONENTS ---
-    const Button = ({ children, variant = 'primary', size = 'md', className = '', ...props }) => {
-      const variants = {
-        primary: "bg-blue-600 text-white hover:bg-blue-700",
-        secondary: "bg-slate-700 text-white hover:bg-slate-600",
-        danger: "bg-red-600 text-white hover:bg-red-700",
-        ghost: "bg-transparent text-slate-300 hover:bg-slate-800"
-      };
-      const sizes = { sm: "px-3 py-1 text-sm", md: "px-5 py-2", lg: "px-8 py-3 text-lg" };
-      return (
-        <button 
-          className={"inline-flex items-center justify-center font-bold rounded-xl transition-all active:scale-95 " + variants[variant] + " " + sizes[size] + " " + className} 
-          {...props}
-        >
-          {children}
-        </button>
-      );
+      ]
     };
 
-    const AnswerTile = ({ answer, index, onClick, hostMode = false }) => {
-      if (!answer) return <div className="h-16 bg-blue-900/30 border-2 border-blue-800 rounded flex items-center justify-center"><span className="text-blue-700 font-bold text-2xl">{index + 1}</span></div>;
+    const Confetti = () => {
+      const pieces = useMemo(() => [...Array(50)].map((_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        delay: Math.random() * 4,
+        color: ['#fcd34d', '#3b82f6', '#ef4444', '#10b981', '#a855f7'][Math.floor(Math.random() * 5)]
+      })), []);
+      
       return (
-        <div onClick={(!answer.revealed && onClick) ? onClick : undefined} className="relative h-16 w-full perspective-1000 cursor-pointer">
-          <div className={"absolute inset-0 w-full h-full transition-all duration-700 transform-style-3d " + (answer.revealed ? "rotate-x-180" : "")}>
-            <div className="absolute inset-0 w-full h-full backface-hidden flex items-center justify-center bg-blue-600 border-2 border-blue-400 rounded-lg shadow-xl">
-              <span className="text-white font-bold text-2xl game-font">{index + 1}</span>
-              {hostMode && !answer.revealed && <span className="absolute right-4 text-white/20 text-[10px] uppercase font-bold">{answer.text}</span>}
-            </div>
-            <div className="absolute inset-0 w-full h-full backface-hidden flex items-center justify-between px-4 bg-yellow-500 border-2 border-yellow-200 rounded-lg shadow-xl text-blue-950 rotate-x-180">
-              <span className="font-bold uppercase truncate text-lg">{answer.text}</span>
-              <span className="font-black text-xl game-font">{answer.points}</span>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    const StrikeDisplay = ({ strikes }) => {
-      if (!strikes) return null;
-      return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center gap-12 bg-black/60 backdrop-blur-md">
-          {[...Array(strikes)].map((_, i) => (
-            <div key={i} className="animate-strike text-[200px] text-red-600 font-black game-font">X</div>
+        <div className="fixed inset-0 pointer-events-none">
+          {pieces.map(p => (
+            <div 
+              key={p.id} 
+              className="confetti" 
+              style={{ 
+                left: `${p.left}%`, 
+                animationDelay: `${p.delay}s`,
+                backgroundColor: p.color
+              }} 
+            />
           ))}
         </div>
       );
     };
 
-    const LanguagePicker = ({ current, onChange }) => {
-      const [isOpen, setIsOpen] = useState(false);
-      const langs = [{ c: 'en', l: 'English', f: '🇺🇸' }, { c: 'ru', l: 'Русский', f: '🇷🇺' }, { c: 'es', l: 'Español', f: '🇲🇽' }];
-      return (
-        <div className="relative">
-          <button onClick={() => setIsOpen(!isOpen)} className="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 flex items-center gap-2">
-            <span>{langs.find(l => l.c === current)?.f}</span>
-            <ChevronDown className="w-4 h-4" />
+    const AvatarPicker = ({ selected, onSelect }) => (
+      <div className="avatar-grid max-w-md mx-auto">
+        {AVATARS.map(a => (
+          <button 
+            key={a} 
+            onClick={() => onSelect(a)} 
+            className={`avatar-btn ${selected === a ? 'selected' : ''}`}
+          >
+            {a}
           </button>
-          {isOpen && (
-            <div className="absolute top-full right-0 mt-2 w-40 bg-slate-900 border border-slate-700 rounded-xl p-2 z-50">
-              {langs.map(l => (
-                <button key={l.c} onClick={() => { onChange(l.c); setIsOpen(false); }} className="w-full text-left p-2 hover:bg-slate-800 rounded-lg flex items-center gap-2">
-                  <span>{l.f}</span><span>{l.l}</span>
-                </button>
-              ))}
+        ))}
+      </div>
+    );
+
+    const AnswerTile = ({ answer, index, onClick, isHost }) => {
+      if (!answer) return <div className="h-24 rounded-2xl bg-slate-900/30 border border-slate-800 border-dashed"></div>;
+      const isRevealed = answer.revealed;
+      return (
+        <div className={`card-wrap ${isRevealed ? 'revealed' : ''}`} onClick={onClick}>
+          <div className="card-inner">
+            <div className={`card-front ${isHost ? 'host-mode' : ''}`}>
+              {!isHost ? (
+                <span className="opacity-30">{index + 1}</span>
+              ) : (
+                <>
+                  <span className="text-blue-400 font-black text-sm uppercase tracking-widest">{index + 1}</span>
+                  <span className="font-bold text-center px-2 text-sm">{answer.text}</span>
+                  <span className="text-slate-500 font-black text-[10px]">{answer.points} PTS</span>
+                </>
+              )}
             </div>
-          )}
+            <div className="card-back">
+              <span className="font-extrabold text-xl truncate uppercase tracking-tight">{answer.text}</span>
+              <div className="h-10 w-px bg-amber-900/20 mx-2"></div>
+              <span className="font-black text-4xl">{answer.points}</span>
+            </div>
+          </div>
         </div>
       );
     };
 
-    // --- VIEWS ---
-    function AuthView({ onAuthSuccess, onCancel, lang }) {
-      const t = translations[lang];
-      const [isLogin, setIsLogin] = useState(true);
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [name, setName] = useState('');
-      const [error, setError] = useState('');
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        const users = JSON.parse(localStorage.getItem('feud_users') || '[]');
-        if (isLogin) {
-          const user = users.find(u => u.email === email && u.password === password);
-          if (user) onAuthSuccess(user); else setError("Invalid login");
-        } else {
-          const newUser = { id: generateId(), name, email, password };
-          users.push(newUser);
-          localStorage.setItem('feud_users', JSON.stringify(users));
-          onAuthSuccess(newUser);
-        }
-      };
-
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6">
-          <div className="max-w-sm w-full space-y-8 bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-            <h1 className="text-4xl font-black game-font text-center uppercase italic">{isLogin ? t.hostLogin : t.registerHost}</h1>
-            {error && <div className="text-red-500 text-center text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && <input type="text" placeholder={t.displayName} className="w-full p-4 bg-slate-950 rounded-xl" value={name} onChange={e => setName(e.target.value)} />}
-              <input type="email" placeholder={t.email} className="w-full p-4 bg-slate-950 rounded-xl" value={email} onChange={e => setEmail(e.target.value)} />
-              <input type="password" placeholder={t.password} className="w-full p-4 bg-slate-950 rounded-xl" value={password} onChange={e => setPassword(e.target.value)} />
-              <Button type="submit" className="w-full py-4 text-xl uppercase game-font">{isLogin ? t.enterDashboard : t.createAccount}</Button>
-            </form>
-            <button onClick={() => setIsLogin(!isLogin)} className="w-full text-blue-500 text-sm">{isLogin ? t.newHere : t.alreadyHost}</button>
-            <Button variant="ghost" onClick={onCancel} className="w-full">{t.backHome}</Button>
-          </div>
-        </div>
-      );
-    }
-
-    function JoinView({ onJoin, onCancel, lang }) {
-      const t = translations[lang];
+    function JoinView({ onJoin, onBack }) {
       const [code, setCode] = useState('');
       const [name, setName] = useState('');
+      const [avatar, setAvatar] = useState(AVATARS[0]);
       const [teamId, setTeamId] = useState('');
-      const [teams, setTeams] = useState([]);
-      const serviceRef = useRef(null);
+      const [roomData, setRoomData] = useState(null);
+      const syncRef = useRef(null);
 
       useEffect(() => {
         if (code.length === 6) {
-          const s = new MultiplayerService(code, (msg) => {
-            if (msg.type === 'GAME_UPDATE') {
-              if (msg.payload && msg.payload.teams) setTeams(msg.payload.teams);
-            }
+          syncRef.current = new SyncService(code, (msg) => {
+            if (msg.type === 'HEARTBEAT' || msg.type === 'SYNC') setRoomData(msg.payload);
           });
-          serviceRef.current = s;
-          s.send({ type: 'REQUEST_SYNC' });
-          return () => s.close();
-        }
+          syncRef.current.send('REQUEST_SYNC');
+          return () => syncRef.current?.close();
+        } else setRoomData(null);
       }, [code]);
 
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6">
-          <div className="max-w-sm w-full space-y-6 bg-slate-900 p-8 rounded-3xl border border-slate-800">
-            <h1 className="text-3xl font-black game-font text-center">{t.joinRoom}</h1>
-            <input type="text" maxLength={6} placeholder={t.roomCode} className="w-full p-4 bg-slate-950 text-center text-4xl font-black rounded-xl" value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} />
-            <input type="text" placeholder={t.yourName} className="w-full p-4 bg-slate-950 rounded-xl" value={name} onChange={e => setName(e.target.value)} />
-            {teams.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                {teams.map(team => (
-                  <button key={team.id} onClick={() => setTeamId(team.id)} className={"p-4 rounded-xl border-4 transition-all " + (teamId === team.id ? "border-white scale-105" : "border-transparent opacity-60")} style={{ backgroundColor: team.color }}>
-                    <span className="font-bold text-white uppercase">{team.name}</span>
-                  </button>
-                ))}
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+          <div className="w-full max-w-4xl glass p-10 rounded-[2.5rem] shadow-2xl space-y-8 animate-in zoom-in duration-500">
+            <div className="text-center space-y-2">
+              <div className="inline-flex p-3 bg-blue-600/10 rounded-2xl text-blue-500 mb-2">
+                <Zap className="fill-current w-6 h-6" />
               </div>
-            )}
-            <Button onClick={() => onJoin(code, name, teamId)} className="w-full py-4 uppercase game-font text-xl" disabled={!code || !name || !teamId}>{t.joinGame}</Button>
-            <Button variant="ghost" onClick={onCancel} className="w-full">{t.backHome}</Button>
-          </div>
-        </div>
-      );
-    }
-
-    function GameCreator({ onSave, onCancel, lang }) {
-      const t = translations[lang];
-      const [title, setTitle] = useState('');
-      const [topic, setTopic] = useState('');
-      const [loading, setLoading] = useState(false);
-      const [questions, setQuestions] = useState([]);
-      const [teams, setTeams] = useState([{id:'t1', name:'Team 1', color:'#2563eb'}, {id:'t2', name:'Team 2', color:'#dc2626'}]);
-
-      const handleGenerate = async () => {
-        if (!topic) return;
-        setLoading(true);
-        try {
-          const game = await generateFeudGame(topic, lang);
-          setTitle(game.title);
-          setQuestions(game.questions);
-        } catch(e) { 
-          console.error(e);
-          alert("Error generating game."); 
-        }
-        setLoading(false);
-      };
-
-      return (
-        <div className="min-h-screen bg-slate-950 p-6 space-y-8">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Button variant="ghost" onClick={onCancel}><ChevronLeft /> Back</Button>
-            <h1 className="text-3xl font-black game-font uppercase italic">{t.boardEditor}</h1>
-            <Button onClick={() => onSave({id: generateId(), title, questions, teams, createdAt: Date.now()})} disabled={!title || !questions.length}>{t.saveGame}</Button>
-          </div>
-          <div className="max-w-4xl mx-auto bg-slate-900 p-8 rounded-3xl space-y-6">
-            <div className="flex gap-4">
-              <input type="text" placeholder={t.gameTheme} className="flex-1 p-4 bg-slate-950 rounded-xl" value={topic} onChange={e => setTopic(e.target.value)} />
-              <Button onClick={handleGenerate} disabled={loading}>{loading ? "..." : t.createButton}</Button>
+              <h1 className="text-4xl font-black game-title tracking-tight uppercase">Ready to Play?</h1>
+              <p className="text-slate-500 text-sm">Join the broadcast with your 6-digit code</p>
             </div>
-            <input type="text" placeholder="Game Title" className="w-full p-4 bg-slate-950 text-2xl font-bold rounded-xl" value={title} onChange={e => setTitle(e.target.value)} />
-            <div className="space-y-4">
-              {questions.map((q, i) => (
-                <div key={q.id} className="bg-slate-800 p-6 rounded-2xl space-y-4">
-                  <h3 className="font-bold">Round {i+1}: {q.prompt}</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {q.answers.map(a => <div key={a.id} className="bg-slate-950 p-2 rounded text-sm flex justify-between"><span>{a.text}</span><span className="text-yellow-500">{a.points}</span></div>)}
-                  </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Access Code</p>
+                   <input 
+                    type="text" maxLength={6} placeholder="ROOM CODE" 
+                    className="w-full bg-slate-900/50 p-6 text-center text-4xl font-black rounded-2xl border-2 border-slate-800 focus:border-blue-500 outline-none tracking-widest transition-all" 
+                    value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} 
+                  />
                 </div>
-              ))}
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Display Name</p>
+                   <input 
+                    type="text" placeholder="DISPLAY NAME" 
+                    className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 outline-none focus:border-blue-500 font-black uppercase text-sm tracking-widest text-center" 
+                    value={name} onChange={e => setName(e.target.value)} 
+                  />
+                </div>
+                {roomData && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Choose your team</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      {roomData.teams.map(t => (
+                        <button key={t.id} onClick={() => setTeamId(t.id)} className={`p-5 rounded-2xl border-2 transition-all font-black text-xs uppercase tracking-widest ${teamId === t.id ? 'border-white scale-105 shadow-xl' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{background: t.color}}>
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 text-center">Customize Avatar</p>
+                <AvatarPicker selected={avatar} onSelect={setAvatar} />
+              </div>
+            </div>
+
+            <div className="pt-6 grid grid-cols-2 gap-6">
+              <button onClick={onBack} className="btn btn-ghost py-6 text-lg uppercase tracking-widest rounded-2xl">Back</button>
+              <button onClick={() => onJoin(code, name, avatar, teamId)} disabled={!roomData || !name || !teamId} className="btn btn-primary py-6 text-xl tracking-tight uppercase shadow-xl rounded-2xl">Enter Arena</button>
             </div>
           </div>
         </div>
       );
     }
 
-    function GameEngine({ game, onExit, lang }) {
-      const t = translations[lang];
+    function GameEngine({ board, onExit }) {
       const [state, setState] = useState({
-        idx: 0,
-        scores: {},
+        qIdx: 0,
+        scores: {}, // Permanent team scores
+        roundBank: 0, 
         strikes: 0,
-        buzzed: null,
+        buzzedId: null,
         players: [],
+        revealedIds: [],
         roomCode: Math.floor(100000 + Math.random() * 900000).toString(),
-        revealed: []
+        gameStatus: 'LOBBY',
+        showStrikeAnim: false
       });
-      const [view, setView] = useState('LOBBY');
-      const [animStrikes, setAnimStrikes] = useState(0);
-      const serviceRef = useRef(null);
-      
-      const currentQ = game.questions[state.idx];
+      const syncRef = useRef(null);
+      const currentQ = board.questions[state.qIdx];
 
-      const sync = useCallback(() => {
-        if (serviceRef.current && currentQ) {
-          serviceRef.current.send({
-            type: 'GAME_UPDATE',
-            payload: {
-              prompt: currentQ.prompt,
-              answers: currentQ.answers.map((a, i) => ({
-                index: i,
-                revealed: state.revealed.includes(a.id),
-                text: state.revealed.includes(a.id) ? a.text : undefined,
-                points: state.revealed.includes(a.id) ? a.points : undefined
-              })),
-              teams: game.teams,
-              teamScores: state.scores,
-              gameState: view,
-              buzzedPlayerId: state.buzzed,
-              strikes: state.strikes,
-              roundPoints: currentQ.answers.filter(a => state.revealed.includes(a.id)).reduce((s, a) => s + a.points, 0)
-            }
-          });
-        }
-      }, [currentQ, state, game.teams, view]);
+      const syncAll = useCallback(() => {
+        if (!syncRef.current) return;
+        syncRef.current.send('SYNC', {
+          prompt: currentQ?.prompt || "",
+          teams: board.teams,
+          scores: state.scores,
+          roundBank: state.roundBank,
+          strikes: state.strikes,
+          buzzedId: state.buzzedId,
+          gameStatus: state.gameStatus,
+          answers: currentQ?.answers.map((a, i) => ({
+            index: i,
+            revealed: state.revealedIds.includes(a.id),
+            text: state.revealedIds.includes(a.id) ? a.text : null,
+            points: state.revealedIds.includes(a.id) ? a.points : null
+          })) || []
+        });
+      }, [currentQ, state, board.teams]);
 
       useEffect(() => {
-        const s = new MultiplayerService(state.roomCode, (msg) => {
-          if (msg.type === 'REQUEST_SYNC') sync();
-          if (msg.type === 'JOIN') setState(p => ({...p, players: [...p.players, msg.payload]}));
-          if (msg.type === 'BUZZ') setState(p => p.buzzed ? p : ({...p, buzzed: msg.payload.playerId}));
+        syncRef.current = new SyncService(state.roomCode, (msg) => {
+          if (msg.type === 'REQUEST_SYNC') syncAll();
+          if (msg.type === 'JOIN') setState(s => s.players.find(p => p.id === msg.payload.id) ? s : ({...s, players: [...s.players, msg.payload]}));
+          if (msg.type === 'UPDATE_PROFILE') setState(s => ({...s, players: s.players.map(p => p.id === msg.payload.id ? {...p, ...msg.payload} : p)}));
+          if (msg.type === 'BUZZ' && state.gameStatus === 'PLAYING') {
+             setState(s => {
+                if (s.buzzedId) return s;
+                return {...s, buzzedId: msg.payload.id};
+             });
+          }
         });
-        serviceRef.current = s;
-        return () => s.close();
-      }, [state.roomCode, sync]);
+        const beat = setInterval(() => syncRef.current.send('HEARTBEAT', { teams: board.teams, gameStatus: state.gameStatus, prompt: currentQ?.prompt || "" }), 2000);
+        return () => { clearInterval(beat); syncRef.current?.close(); };
+      }, [state.roomCode, state.gameStatus, syncAll, currentQ]);
 
-      useEffect(() => { sync(); }, [state, view, sync]);
+      useEffect(() => { syncAll(); }, [state.revealedIds, state.gameStatus, state.strikes, state.buzzedId, state.scores, state.qIdx, state.roundBank]);
 
-      const handleReveal = (a) => {
-        if (state.revealed.includes(a.id)) return;
-        setState(p => ({ ...p, revealed: [...p.revealed, a.id] }));
+      const onToggleReveal = (aid) => {
+        const isRevealed = state.revealedIds.includes(aid);
+        const answer = currentQ.answers.find(a => a.id === aid);
+        const pts = answer?.points || 0;
+        
+        setState(s => {
+          const newRevealedIds = isRevealed ? s.revealedIds.filter(id => id !== aid) : [...s.revealedIds, aid];
+          let newScores = { ...s.scores };
+          let newRoundBank = isRevealed ? s.roundBank - pts : s.roundBank + pts;
+
+          // AWARD AUTO-POINT: If someone is BUZZED, reveal adds points directly to their team
+          if (!isRevealed && s.buzzedId) {
+             const buzzedPlayer = s.players.find(p => p.id === s.buzzedId);
+             if (buzzedPlayer) {
+                const teamId = buzzedPlayer.teamId;
+                newScores[teamId] = (newScores[teamId] || 0) + pts;
+                // Since points are added to team, the round bank shouldn't accumulate them for a separate manual award
+                newRoundBank = 0; 
+             }
+          }
+
+          return {
+            ...s, 
+            revealedIds: newRevealedIds,
+            roundBank: newRoundBank,
+            scores: newScores
+          };
+        });
       };
 
-      const handleStrike = () => {
-        const next = (state.strikes + 1);
-        if (next > 3) {
-           setState(p => ({ ...p, strikes: 0, buzzed: null }));
-           serviceRef.current?.send({ type: 'RESET_BUZZER' });
-           return;
+      const onStrike = () => {
+        setState(s => ({...s, strikes: (s.strikes + 1) % 4, buzzedId: null, showStrikeAnim: true }));
+        setTimeout(() => setState(s => ({...s, showStrikeAnim: false})), 1500);
+      };
+
+      const onNext = () => {
+        if (state.qIdx + 1 < board.questions.length) {
+          const nextIdx = state.qIdx + 1;
+          setState(s => ({...s, qIdx: nextIdx, revealedIds: [], strikes: 0, buzzedId: null, gameStatus: 'PLAYING', roundBank: 0}));
+        } else {
+          setState(s => ({...s, gameStatus: 'PODIUM', buzzedId: null}));
         }
-        setAnimStrikes(next);
-        setTimeout(() => setAnimStrikes(0), 1000);
-        setState(p => ({ ...p, strikes: next, buzzed: null }));
-        serviceRef.current?.send({ type: 'RESET_BUZZER' });
       };
 
-      const handleScore = (teamId) => {
-        const roundPts = currentQ.answers.filter(a => state.revealed.includes(a.id)).reduce((s, a) => s + a.points, 0);
-        setState(p => ({
-          ...p,
-          scores: { ...p.scores, [teamId]: (p.scores[teamId] || 0) + roundPts }
-        }));
-      };
+      // PODIUM VIEW
+      if (state.gameStatus === 'PODIUM') {
+        const sortedTeams = [...board.teams].sort((a, b) => (state.scores[b.id] || 0) - (state.scores[a.id] || 0));
+        
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-12 bg-slate-950 overflow-hidden relative">
+            <Confetti />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)] opacity-30"></div>
+            
+            <div className="text-center z-10 space-y-4 animate-in fade-in duration-1000">
+               <h1 className="text-8xl font-black game-title tracking-tighter italic text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">VICTORY</h1>
+               <p className="text-blue-400 uppercase tracking-[1em] font-black text-sm">The Tournament Results</p>
+            </div>
+            
+            <div className="podium-container z-10">
+               {/* 2nd Place */}
+               {sortedTeams[1] && (
+                 <div className="podium-place podium-2 animate-in slide-in-from-bottom-20 duration-1000 delay-200">
+                    <div className="absolute -top-40 flex flex-col items-center space-y-2">
+                       <div className="flex -space-x-4">
+                          {state.players.filter(p => p.teamId === sortedTeams[1].id).map((p, idx) => (
+                             <div key={p.id} className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-4xl border-4 border-slate-700 shadow-2xl floating-player" style={{animationDelay: `${idx * 200}ms`}}>
+                                {p.avatar}
+                                <span className="absolute -bottom-8 whitespace-nowrap text-[10px] font-bold text-slate-400 uppercase">{p.name}</span>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                    <Medal className="w-16 h-16 text-slate-300 mb-4" />
+                    <span className="text-3xl font-black text-slate-100 mb-1">{sortedTeams[1].name}</span>
+                    <span className="text-5xl font-black text-white">{state.scores[sortedTeams[1].id] || 0}</span>
+                 </div>
+               )}
 
-      if (view === 'LOBBY') return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 space-y-12">
-          <div className="bg-white text-slate-900 p-12 rounded-[3rem] text-center shadow-2xl">
-            <p className="font-black uppercase tracking-widest text-sm mb-2">{t.roomCode}</p>
-            <h1 className="text-9xl font-black game-font">{state.roomCode}</h1>
-          </div>
-          <div className="flex gap-4">
-            {state.players.map(p => <div key={p.id} className="bg-slate-900 p-4 rounded-2xl flex flex-col items-center"><span>{p.emoji || '👤'}</span><span className="text-xs">{p.name}</span></div>)}
-          </div>
-          <Button size="lg" className="px-24 py-8 text-4xl game-font uppercase" onClick={() => setView('PLAY')}>Start</Button>
-          <Button variant="ghost" onClick={onExit}>{t.cancelSession}</Button>
-        </div>
-      );
+               {/* 1st Place */}
+               {sortedTeams[0] && (
+                 <div className="podium-place podium-1 animate-in slide-in-from-bottom-20 duration-700">
+                    <div className="absolute -top-48 flex flex-col items-center space-y-4">
+                       <div className="flex -space-x-6">
+                          {state.players.filter(p => p.teamId === sortedTeams[0].id).map((p, idx) => (
+                             <div key={p.id} className="w-20 h-20 bg-amber-800 rounded-3xl flex items-center justify-center text-5xl border-4 border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.5)] floating-player" style={{animationDelay: `${idx * 200 + 500}ms`}}>
+                                {p.avatar}
+                                <span className="absolute -bottom-10 whitespace-nowrap text-xs font-black text-amber-300 uppercase tracking-tighter">{p.name}</span>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                    <Trophy className="w-24 h-24 text-amber-200 mb-6 drop-shadow-[0_0_30px_rgba(252,211,77,0.8)] animate-bounce" />
+                    <span className="text-4xl font-black text-amber-50 mb-2">{sortedTeams[0].name}</span>
+                    <span className="text-7xl font-black text-white mb-4">{state.scores[sortedTeams[0].id] || 0}</span>
+                    <div className="bg-amber-900/60 px-8 py-3 rounded-full border-2 border-amber-400 shadow-2xl">
+                       <span className="uppercase font-black tracking-[0.4em] text-amber-200 text-sm">CHAMPIONS</span>
+                    </div>
+                 </div>
+               )}
+            </div>
 
-      return (
-        <div className="min-h-screen bg-slate-950 flex flex-col p-6">
-          <StrikeDisplay strikes={animStrikes} />
-          <div className="flex justify-center gap-6 mb-12">
-            {game.teams.map(team => (
-              <div key={team.id} onClick={() => handleScore(team.id)} className="bg-slate-900 border-b-8 p-6 rounded-3xl min-w-[150px] text-center cursor-pointer hover:scale-105 transition-all" style={{ borderBottomColor: team.color }}>
-                <p className="text-4xl font-black game-font">{state.scores[team.id] || 0}</p>
-                <p className="text-xs uppercase font-bold">{team.name}</p>
+            <div className="mt-24 z-10 flex gap-8">
+               <button onClick={onExit} className="btn bg-white text-slate-950 px-16 py-6 text-xl rounded-3xl shadow-[0_20px_40px_rgba(255,255,255,0.2)] hover:scale-105 transition-all flex items-center gap-4">
+                  <ArrowLeft className="w-6 h-6" /> RETURN TO MENU
+               </button>
+            </div>
+          </div>
+        );
+      }
+
+      if (state.gameStatus === 'LOBBY') return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-12 bg-slate-950 space-y-16">
+          <div className="text-center space-y-6">
+            <h2 className="text-blue-500 font-black uppercase tracking-[0.5em] text-xs">BROADCASTING FROM</h2>
+            <div className="bg-white text-slate-950 px-24 py-12 rounded-[4rem] shadow-[0_0_120px_rgba(255,255,255,0.1)] relative">
+               <h1 className="text-[12rem] leading-none font-black tracking-tighter">{state.roomCode}</h1>
+               <div className="absolute -top-4 -right-4 bg-blue-600 text-white p-4 rounded-full shadow-2xl"><Users className="w-8 h-8" /></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-10 w-full max-w-6xl">
+            {board.teams.map(t => (
+              <div key={t.id} className="glass p-10 rounded-[3rem] border-t-8 space-y-6" style={{borderColor: t.color}}>
+                <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                  <h3 className="text-2xl font-black uppercase" style={{color: t.color}}>{t.name}</h3>
+                  <span className="text-xs font-bold text-slate-500 uppercase">{state.players.filter(p => p.teamId === t.id).length} Connected</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {state.players.filter(p => p.teamId === t.id).map(p => (
+                    <div key={p.id} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800 flex items-center gap-4 animate-in fade-in zoom-in">
+                      <span className="text-3xl">{p.avatar}</span>
+                      <span className="font-bold text-base truncate uppercase tracking-tight">{p.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-          <div className="max-w-4xl mx-auto w-full space-y-8 flex-1">
-            <div className="bg-blue-900/40 p-12 rounded-3xl border-2 border-blue-500/30 text-center relative shadow-2xl">
-              <h2 className="text-4xl font-black italic">"{currentQ.prompt}"</h2>
-              {state.buzzed && (
-                <div className="absolute inset-0 bg-yellow-500/95 rounded-3xl flex flex-col items-center justify-center text-4xl font-black uppercase text-blue-900 animate-in zoom-in">
-                  <span className="text-6xl mb-2">BUZZ!</span>
-                  <span>{state.players.find(p => p.id === state.buzzed)?.name}</span>
-                </div>
-              )}
+          <div className="flex gap-8">
+            <button onClick={() => setState(s => ({...s, gameStatus: 'PLAYING'}))} className="btn btn-primary px-24 py-8 text-3xl tracking-tight rounded-[2rem] shadow-2xl">START GAME</button>
+            <button onClick={onExit} className="btn btn-secondary px-10 rounded-2xl">EXIT</button>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen p-10 flex flex-col space-y-12 animate-in fade-in duration-700 relative overflow-hidden">
+          {/* Enhanced Full Screen Strike Overlay */}
+          {state.showStrikeAnim && (
+            <div className="strike-overlay">
+               <div className="flex gap-16">
+                  {[...Array(state.strikes === 0 ? 3 : state.strikes)].map((_, i) => (
+                    <div key={i} className="animate-strike">
+                      <X className="w-[28rem] h-[28rem] text-red-600 fill-current" strokeWidth={10} />
+                    </div>
+                  ))}
+               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[...Array(8)].map((_, i) => <AnswerTile key={i} index={i} answer={currentQ.answers[i]} onClick={() => handleReveal(currentQ.answers[i])} hostMode={true} />)}
+          )}
+
+          {/* Header Scores - Manual award removed, shows team status */}
+          <div className="flex justify-between items-center max-w-7xl mx-auto w-full">
+             {board.teams.map(t => (
+                <div key={t.id} className="glass p-10 rounded-[2.5rem] border-b-[12px] min-w-[320px] text-center shadow-2xl relative" style={{borderBottomColor: t.color}}>
+                   <p className="text-8xl font-black mb-2 leading-none">{state.scores[t.id] || 0}</p>
+                   <p className="text-xs font-black uppercase text-slate-500 tracking-[0.4em]">{t.name}</p>
+                </div>
+             ))}
+          </div>
+
+          {/* Question Board */}
+          <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col space-y-8 relative">
+            <div className="glass p-16 rounded-[4rem] text-center relative border-2 border-white/5 shadow-2xl overflow-hidden">
+               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)]"></div>
+               <h2 className="text-5xl font-black italic drop-shadow-2xl leading-tight tracking-tight text-white relative">"{currentQ.prompt}"</h2>
+               
+               {state.buzzedId && (
+                  <div className="absolute inset-0 bg-amber-400 flex flex-col items-center justify-center animate-in zoom-in duration-300 rounded-[4rem] z-50">
+                     <h3 className="text-9xl font-black text-amber-950 uppercase italic mb-8 tracking-tighter">BUZZ!</h3>
+                     <div className="flex items-center gap-6 bg-amber-950 text-white px-12 py-6 rounded-[2rem] shadow-2xl border-4 border-amber-800">
+                        <span className="text-6xl">{state.players.find(p => p.id === state.buzzedId)?.avatar}</span>
+                        <span className="text-4xl font-black uppercase tracking-tight">{state.players.find(p => p.id === state.buzzedId)?.name}</span>
+                     </div>
+                     <button onClick={() => setState(s => ({...s, buzzedId: null}))} className="mt-10 bg-amber-950 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:scale-105 transition-all">Clear Buzzer</button>
+                  </div>
+               )}
+
+               <div className="absolute top-8 right-12 flex gap-4">
+                  {[...Array(state.strikes)].map((_, i) => <X key={i} className="text-red-600 w-16 h-16 fill-current animate-in zoom-in" strokeWidth={5} />)}
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+               {[...Array(8)].map((_, i) => (
+                  <AnswerTile 
+                    key={i} 
+                    index={i} 
+                    answer={currentQ.answers[i] ? {...currentQ.answers[i], revealed: state.revealedIds.includes(currentQ.answers[i].id)} : null} 
+                    isHost={true}
+                    onClick={() => currentQ.answers[i] && onToggleReveal(currentQ.answers[i].id)} 
+                  />
+               ))}
             </div>
           </div>
-          <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-900 border-t border-slate-800 flex justify-center gap-6 shadow-2xl">
-            <Button variant="danger" className="h-16 px-12 text-2xl game-font" onClick={handleStrike}>{t.strike}</Button>
-            <Button className="h-16 px-12 text-2xl game-font" onClick={() => setState(p => ({ ...p, idx: (p.idx + 1) % game.questions.length, strikes: 0, revealed: [], buzzed: null }))}>{t.nextQuestion}</Button>
-            <Button variant="ghost" onClick={onExit}>Exit</Button>
+
+          {/* Host Controls */}
+          <div className="fixed bottom-10 right-10 flex gap-6 glass p-6 rounded-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] z-[60]">
+             <button onClick={onStrike} className="btn btn-danger w-48 py-5 text-lg uppercase tracking-widest shadow-xl">Strike</button>
+             <button onClick={onNext} className="btn btn-primary w-72 py-5 text-lg flex items-center gap-3 uppercase tracking-tighter shadow-xl">
+               {state.qIdx + 1 >= board.questions.length ? 'Show Results' : 'Next Question'} <ChevronRightCircle className="w-6 h-6" />
+             </button>
+             <button onClick={onExit} className="btn btn-secondary px-8 shadow-lg"><LogOut className="w-6 h-6" /></button>
           </div>
         </div>
       );
     }
 
-    function PlayerInterface({ roomCode, playerName, playerId, playerTeamId, onExit, lang }) {
-      const t = translations[lang];
+    function PlayerInterface({ code, name, avatar, id, teamId, onExit }) {
       const [sync, setSync] = useState(null);
       const [status, setStatus] = useState('READY');
-      const serviceRef = useRef(null);
+      const [isEditing, setIsEditing] = useState(false);
+      const [editName, setEditName] = useState(name);
+      const [editAvatar, setEditAvatar] = useState(avatar);
+      const syncRef = useRef(null);
 
       useEffect(() => {
-        const s = new MultiplayerService(roomCode, (msg) => {
-          if (msg.type === 'GAME_UPDATE') setSync(msg.payload);
-          if (msg.type === 'RESET_BUZZER') setStatus('READY');
+        syncRef.current = new SyncService(code, (msg) => {
+          if (msg.type === 'SYNC') setSync(msg.payload);
+          if (msg.type === 'HEARTBEAT') setSync(prev => prev ? {...prev, ...msg.payload} : msg.payload);
         });
-        serviceRef.current = s;
-        s.send({ type: 'JOIN', payload: { name: playerName, id: playerId, emoji: '👤', teamId: playerTeamId } });
-        return () => s.close();
-      }, [roomCode, playerId, playerName, playerTeamId]);
+        syncRef.current.send('JOIN', { name, avatar, id, teamId });
+        syncRef.current.send('REQUEST_SYNC');
+        return () => syncRef.current?.close();
+      }, [code, id, teamId]);
 
-      const handleBuzz = () => {
-        if (status !== 'READY') return;
+      const onBuzz = () => {
+        if (!sync || sync.gameStatus !== 'PLAYING' || sync.buzzedId) return;
         setStatus('BUZZED');
-        if (serviceRef.current) serviceRef.current.send({ type: 'BUZZ', payload: { playerId } });
+        syncRef.current.send('BUZZ', { id });
+        setTimeout(() => setStatus('READY'), 3000);
       };
 
-      if (!sync) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-2xl animate-pulse">Connecting to Room {roomCode}...</div>;
+      const handleUpdateProfile = () => {
+        syncRef.current.send('UPDATE_PROFILE', { id, name: editName, avatar: editAvatar });
+        setIsEditing(false);
+      };
+
+      if (!sync) return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 space-y-8 bg-slate-950">
+           <div className="relative">
+              <div className="w-24 h-24 border-8 border-slate-800 border-t-blue-600 rounded-full animate-spin"></div>
+              <Zap className="absolute inset-0 m-auto text-blue-500 w-8 h-8 fill-current animate-pulse" />
+           </div>
+           <p className="font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse text-xs">Awaiting broadcast data...</p>
+           <button onClick={onExit} className="btn btn-ghost">Cancel</button>
+        </div>
+      );
 
       return (
-        <div className="min-h-screen bg-slate-950 flex flex-col p-6 items-center">
-          <div className="w-full max-w-sm flex justify-between mb-8">
-             <div className="bg-slate-900 p-2 px-4 rounded-xl border border-slate-800">
-                <span className="text-xs text-slate-500 uppercase">Room</span>
-                <p className="font-bold">{roomCode}</p>
+        <div className="min-h-screen flex flex-col items-center p-8 space-y-12 bg-slate-950">
+          <div className="w-full max-w-md glass p-6 rounded-[2.5rem] flex justify-between items-center shadow-2xl border-white/5">
+             <div className="flex items-center gap-5">
+                <div className="relative">
+                  <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-5xl shadow-inner">{isEditing ? editAvatar : avatar}</div>
+                  <button onClick={() => setIsEditing(!isEditing)} className="absolute -bottom-2 -right-2 bg-blue-600 p-2 rounded-xl border-4 border-slate-950 shadow-xl transition-transform hover:scale-110"><Edit3 className="w-3 h-3 text-white" /></button>
+                </div>
+                <div className="leading-tight">
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Broadcast {code}</p>
+                   <p className="font-black text-xl uppercase tracking-tight text-white">{isEditing ? editName : name}</p>
+                </div>
              </div>
-             <Button variant="ghost" onClick={onExit} size="sm">Leave</Button>
+             <button onClick={onExit} className="btn btn-secondary p-5 rounded-2xl border-white/5"><LogOut className="w-5 h-5" /></button>
           </div>
-          <div className="bg-slate-900 p-8 rounded-[2.5rem] text-center w-full max-w-sm space-y-8 shadow-2xl border border-slate-800">
-            <h2 className="text-2xl font-black italic text-blue-400">"{sync.prompt}"</h2>
-            <div className="grid grid-cols-2 gap-2 opacity-50">
-              {[...Array(8)].map((_, i) => <AnswerTile key={i} index={i} answer={sync.answers[i]} />)}
+
+          {isEditing && (
+            <div className="w-full max-w-2xl glass p-10 rounded-[3rem] space-y-8 animate-in slide-in-from-top-6 z-[100] border-blue-500/20 shadow-4xl">
+               <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] ml-2 text-center">Customize Profile</p>
+                  <AvatarPicker selected={editAvatar} onSelect={setEditAvatar} />
+                  <input 
+                    type="text" 
+                    className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 font-black uppercase text-center tracking-widest outline-none focus:border-blue-500 transition-all" 
+                    value={editName} 
+                    onChange={e => setEditName(e.target.value)} 
+                    placeholder="ENTER NAME"
+                  />
+               </div>
+               <button onClick={handleUpdateProfile} className="btn btn-primary w-full py-5 text-xl tracking-tight shadow-xl uppercase rounded-2xl">Update Profile</button>
             </div>
-            <div className="flex justify-center py-4">
-              <button 
-                onClick={handleBuzz} 
-                disabled={status !== 'READY' || sync.buzzedPlayerId}
-                className={"w-48 h-48 rounded-full border-[12px] text-4xl font-black uppercase transition-all shadow-[0_20px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-4 " + 
-                  (status === 'READY' && !sync.buzzedPlayerId ? "bg-red-600 border-red-400 animate-buzzer-ready cursor-pointer" : "bg-slate-800 border-slate-700 opacity-50")}
-              >
-                {status === 'READY' ? (sync.buzzedPlayerId ? t.locked : t.buzz) : t.wait}
-              </button>
-            </div>
-            <div className="text-xs text-slate-600 font-bold uppercase tracking-widest">Buzz in when you know the answer!</div>
+          )}
+
+          <div className="w-full max-w-2xl glass rounded-[4.5rem] p-12 text-center space-y-12 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.8)] flex-1 flex flex-col justify-center relative overflow-hidden border-white/5">
+             {sync.gameStatus === 'LOBBY' ? (
+                <div className="py-24 space-y-10">
+                   <Users className="w-16 h-16 text-blue-500 mx-auto" />
+                   <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none">Stay Ready</h2>
+                   <p className="text-slate-500 uppercase font-black tracking-[0.5em] text-[10px]">Awaiting host to start broadcast</p>
+                </div>
+             ) : sync.gameStatus === 'PODIUM' ? (
+                <div className="py-24 space-y-10 animate-in zoom-in">
+                   <Trophy className="w-32 h-32 text-amber-500 mx-auto" />
+                   <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none text-amber-100">Broadcast Ended</h2>
+                   <p className="text-slate-400 font-bold tracking-widest uppercase">Thank you for playing!</p>
+                </div>
+             ) : (
+                <div className="space-y-16 animate-in fade-in duration-500">
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] animate-pulse">Live Topic</p>
+                    <h2 className="text-5xl font-black italic text-blue-50 leading-tight drop-shadow-lg">"{sync.prompt}"</h2>
+                  </div>
+
+                  <div className="flex justify-center relative">
+                     <button 
+                        onClick={onBuzz}
+                        disabled={sync.gameStatus !== 'PLAYING' || (sync.buzzedId && sync.buzzedId !== id)}
+                        className={`w-80 h-80 rounded-full border-[24px] text-7xl font-black transition-all shadow-[0_0_120px_rgba(0,0,0,0.6)] relative z-20 ${
+                           sync.buzzedId === id ? 'bg-amber-500 border-amber-300 text-amber-950 scale-110 rotate-3' : 
+                           sync.gameStatus === 'PLAYING' && !sync.buzzedId ? 'bg-red-600 border-red-500 buzzer-active active:scale-90 hover:scale-[1.02]' : 
+                           'bg-slate-900 border-slate-800 opacity-20 grayscale cursor-not-allowed'
+                        }`}
+                     >
+                        <span className="drop-shadow-2xl">{sync.buzzedId === id ? 'MINE!' : sync.buzzedId ? 'WAIT' : 'BUZZ'}</span>
+                     </button>
+                  </div>
+                  
+                  {sync.buzzedId && sync.buzzedId !== id && (
+                    <div className="flex items-center justify-center gap-3 bg-red-600/10 px-6 py-3 rounded-2xl border border-red-500/20">
+                       <X className="text-red-500 w-5 h-5" />
+                       <span className="text-xs font-black text-red-500 uppercase tracking-[0.2em]">Locked Out - Opponent First</span>
+                    </div>
+                  )}
+                </div>
+             )}
           </div>
         </div>
       );
     }
 
-    // --- MAIN APP ---
     function App() {
       const [view, setView] = useState('HOME');
-      const [user, setUser] = useState(null);
-      const [games, setGames] = useState([]);
-      const [selectedGame, setSelectedGame] = useState(null);
-      const [playerInfo, setPlayerInfo] = useState({ code: '', name: '', teamId: '', id: generateId() });
-      const [lang, setLang] = useState('en');
-      const t = translations[lang];
+      const [boards, setBoards] = useState([]);
+      const [activeBoard, setActiveBoard] = useState(null);
+      const [pInfo, setPInfo] = useState({ code: '', name: '', avatar: AVATARS[0], teamId: '', id: genId() });
 
       useEffect(() => {
-        const saved = localStorage.getItem('feud_games');
-        if (saved) setGames(JSON.parse(saved));
-        const savedUser = localStorage.getItem('feud_current_user');
-        if (savedUser) setUser(JSON.parse(savedUser));
+        const saved = localStorage.getItem('feud_v3_boards');
+        setBoards(saved ? JSON.parse(saved) : [MOCK_BOARD]);
       }, []);
 
-      const saveGame = (g) => {
-        const updated = [...games, g];
-        setGames(updated);
-        localStorage.setItem('feud_games', JSON.stringify(updated));
-        setView('HOME');
-      };
-
-      const handleAuthSuccess = (u) => {
-        setUser(u);
-        localStorage.setItem('feud_current_user', JSON.stringify(u));
-        setView('HOME');
-      };
-
-      if (view === 'AUTH') return <AuthView lang={lang} onAuthSuccess={handleAuthSuccess} onCancel={() => setView('HOME')} />;
-      if (view === 'CREATE') return <GameCreator lang={lang} onSave={saveGame} onCancel={() => setView('HOME')} />;
-      if (view === 'JOIN') return <JoinView lang={lang} onJoin={(c, n, tId) => { setPlayerInfo(p => ({ ...p, code: c, name: n, teamId: tId })); setView('PLAYER_GAME'); }} onCancel={() => setView('HOME')} />;
-      if (view === 'PLAYER_GAME') return <PlayerInterface lang={lang} {...playerInfo} onExit={() => setView('HOME')} />;
-      if (view === 'PLAY' && selectedGame) return <GameEngine lang={lang} game={selectedGame} onExit={() => setView('HOME')} />;
+      if (view === 'JOIN') return <JoinView onBack={() => setView('HOME')} onJoin={(c, n, a, tid) => { setPInfo({ code: c, name: n, avatar: a, teamId: tid, id: genId() }); setView('PLAYER'); }} />;
+      if (view === 'PLAYER') return <PlayerInterface {...pInfo} onExit={() => setView('HOME')} />;
+      if (view === 'PLAY') return <GameEngine board={activeBoard} onExit={() => setView('HOME')} />;
 
       return (
-        <div className="min-h-screen bg-slate-950 flex flex-col">
-          <header className="p-6 flex justify-between items-center bg-slate-900/50 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
-            <h1 className="text-2xl font-black game-font italic uppercase text-blue-500 tracking-tighter">{t.appName}</h1>
-            <div className="flex gap-4 items-center">
-              <LanguagePicker current={lang} onChange={setLang} />
-              {user ? (
-                <div className="flex items-center gap-3">
-                   <span className="font-bold hidden md:inline">{user.name}</span>
-                   <button onClick={() => { setUser(null); localStorage.removeItem('feud_current_user'); }} className="text-slate-500 hover:text-white transition-colors"><LogOut className="w-5 h-5" /></button>
-                </div>
-              ) : (
-                <Button variant="ghost" onClick={() => setView('AUTH')}>{t.login}</Button>
-              )}
-            </div>
+        <div className="min-h-screen flex flex-col bg-slate-950 text-white selection:bg-blue-600/30">
+          <header className="p-8 flex justify-between items-center glass sticky top-0 z-50 border-b border-white/5 backdrop-blur-3xl">
+             <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-600 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)]"><Zap className="fill-current w-6 h-6" /></div>
+                <h1 className="text-3xl font-black game-title tracking-tighter italic">FEUD PRO</h1>
+             </div>
+             <div className="flex gap-4">
+                <button onClick={() => setView('JOIN')} className="btn btn-secondary px-10 py-4 rounded-2xl border-white/5 hover:border-white/10 transition-all font-black text-xs uppercase tracking-widest">JOIN BROADCAST</button>
+                <button onClick={() => alert("Board building is active. Select an existing one below!")} className="btn btn-primary px-10 py-4 rounded-2xl shadow-xl transition-all hover:scale-105 font-black text-xs uppercase tracking-widest"><Plus className="w-4 h-4" /> CREATE BOARD</button>
+             </div>
           </header>
-          <main className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-12">
-            <div className="relative">
-               <div className="absolute -inset-4 bg-blue-600 rounded-full blur-[80px] opacity-20 animate-pulse"></div>
-               <h2 className="text-8xl md:text-[12rem] font-black game-font uppercase italic text-white leading-none drop-shadow-2xl relative z-10">{t.branding}</h2>
-            </div>
-            <div className="flex flex-wrap gap-8 justify-center relative z-10">
-              <Button size="lg" className="px-16 py-8 text-4xl game-font italic uppercase shadow-2xl border-b-8 border-blue-900" onClick={() => setView('JOIN')}>{t.joinAsPlayer}</Button>
-              <Button size="lg" variant="secondary" className="px-16 py-8 text-4xl game-font italic uppercase shadow-2xl border-b-8 border-slate-900" onClick={() => user ? setView('CREATE') : setView('AUTH')}>{t.createBoard}</Button>
-            </div>
-            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-12 relative z-10">
-              {games.length > 0 ? games.map(g => (
-                <div key={g.id} className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 cursor-pointer hover:border-blue-500 hover:bg-slate-800 transition-all hover:scale-105 shadow-xl text-left" onClick={() => { setSelectedGame(g); setView('PLAY'); }}>
-                  <div className="flex justify-between items-start mb-4">
-                     <h3 className="text-2xl font-bold uppercase game-font italic">{g.title}</h3>
-                     <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{g.questions.length} Rounds</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <div className="flex -space-x-2">
-                        {g.teams.map(t => <div key={t.id} className="w-6 h-6 rounded-full border-2 border-slate-900" style={{ backgroundColor: t.color }}></div>)}
-                     </div>
-                     <Play className="w-6 h-6 text-slate-700" />
-                  </div>
+
+          <main className="flex-1 flex flex-col items-center py-24 px-6 space-y-24">
+             <div className="text-center relative max-w-6xl">
+                <div className="absolute inset-0 bg-blue-600/10 blur-[200px] rounded-full"></div>
+                <h2 className="text-[18rem] font-black game-title leading-none tracking-tighter italic opacity-95 drop-shadow-[0_20px_80px_rgba(0,0,0,0.8)] select-none">FEUD</h2>
+                <div className="flex items-center justify-center gap-6 mt-4">
+                  <div className="h-px w-24 bg-gradient-to-r from-transparent to-blue-500"></div>
+                  <p className="text-blue-500 font-black uppercase tracking-[1.5em] text-xs font-semibold italic">Ultimate Host Console</p>
+                  <div className="h-px w-24 bg-gradient-to-l from-transparent to-blue-500"></div>
                 </div>
-              )) : (
-                <div className="col-span-full py-20 bg-slate-900/20 border-2 border-dashed border-slate-800 rounded-[3rem] opacity-30">
-                   <p className="font-bold uppercase tracking-widest italic">Create a board to get started</p>
-                </div>
-              )}
-            </div>
+             </div>
+
+             <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 z-10">
+                {boards.map(b => (
+                   <div key={b.id} className="glass p-12 rounded-[4rem] cursor-pointer hover:border-blue-500/50 transition-all hover:scale-[1.05] group shadow-[0_40px_100px_-30px_rgba(0,0,0,1)] relative overflow-hidden" onClick={() => { setActiveBoard(b); setView('PLAY'); }}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="flex justify-between items-start mb-12 relative z-10">
+                         <h3 className="text-4xl font-black italic uppercase leading-tight group-hover:text-blue-400 transition-colors tracking-tighter">{b.title}</h3>
+                         <div className="p-6 bg-slate-950 rounded-[2rem] group-hover:bg-blue-600 group-hover:scale-110 transition-all shadow-2xl"><Play className="fill-current w-8 h-8" /></div>
+                      </div>
+                      <div className="flex justify-between items-center border-t border-white/5 pt-10 relative z-10">
+                         <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] mb-1">Rounds</span>
+                            <span className="text-2xl font-black text-white">{b.questions.length}</span>
+                         </div>
+                         <div className="flex -space-x-5">
+                            {b.teams.map(t => <div key={t.id} className="w-12 h-12 rounded-full border-4 border-slate-900 shadow-2xl relative transition-transform group-hover:-translate-y-2" style={{background: t.color}}></div>)}
+                         </div>
+                      </div>
+                   </div>
+                ))}
+             </div>
           </main>
-          <footer className="p-8 text-slate-700 text-[10px] font-black uppercase tracking-widest text-center">
-             &copy; 2024 FEUD HOST &bull; Powered by Gemini AI
+          
+          <footer className="p-20 border-t border-white/5 text-slate-800 font-black text-[10px] uppercase tracking-[1em] text-center opacity-50">
+             FEUD MASTER PRO &bull; THE ULTIMATE EXPERIENCE &bull; 2025
           </footer>
         </div>
       );
     }
 
-    const container = document.getElementById('root');
-    if (container) {
-      const root = createRoot(container);
-      root.render(<App />);
-    }
+    createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
