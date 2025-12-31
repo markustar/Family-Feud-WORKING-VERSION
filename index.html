@@ -235,12 +235,128 @@
     import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
     import { createRoot } from 'react-dom/client';
     import { 
-      Play, Shield, ChevronLeft, Zap, X, Plus, Save, Sparkles, Loader2, User, Users, LogOut, Edit3, CheckCircle2, ChevronRightCircle, Trophy, Medal, Star, ArrowLeft 
+      Play, Shield, ChevronLeft, Zap, X, Plus, Save, Sparkles, Loader2, User, Users, LogOut, Edit3, CheckCircle2, ChevronRightCircle, Trophy, Medal, Star, ArrowLeft, Languages 
     } from 'lucide-react';
     import { GoogleGenAI, Type } from "@google/genai";
 
     const AVATARS = ["🦁", "🐯", "🦒", "🦊", "🐶", "🐱", "🐨", "🐸", "🐵", "🦄", "🐼", "🤖", "👻", "👾", "🦖", "🐧", "🐷", "🦋", "🍄", "🥑", "🐙", "🦀", "🚀", "🍕", "🍔"];
     const genId = () => Math.random().toString(36).substr(2, 9);
+
+    const TRANSLATIONS = {
+      en: {
+        app_title: "FEUD PRO",
+        join_broadcast: "JOIN BROADCAST",
+        create_board: "CREATE BOARD",
+        ready_to_play: "Ready to Play?",
+        join_desc: "Join the broadcast with your 6-digit code",
+        access_code: "Access Code",
+        room_code: "ROOM CODE",
+        display_name: "Display Name",
+        choose_team: "Choose your team",
+        customize_avatar: "Customize Avatar",
+        back: "Back",
+        enter_arena: "Enter Arena",
+        broadcasting_from: "BROADCASTING FROM",
+        start_game: "START GAME",
+        exit: "EXIT",
+        strike: "Strike",
+        next_question: "Next Question",
+        show_results: "Show Results",
+        clear_buzzer: "Clear Buzzer",
+        wait_for_host: "Stay Ready",
+        awaiting_host: "Awaiting host to start broadcast",
+        broadcast_ended: "Broadcast Ended",
+        thanks_for_playing: "Thank you for playing!",
+        live_topic: "Live Topic",
+        buzz: "BUZZ",
+        mine: "MINE!",
+        wait: "WAIT",
+        connection_stable: "Connection: Stable",
+        final_standings: "Final Standings",
+        champions: "CHAMPIONS",
+        return_to_menu: "RETURN TO MENU",
+        victory: "VICTORY",
+        tournament_results: "The Tournament Results",
+        rounds: "Rounds",
+        ultimate_console: "Ultimate Host Console",
+        points: "PTS",
+        runner_up: "Runner Up"
+      },
+      ru: {
+        app_title: "ФЬЮД ПРО",
+        join_broadcast: "ВОЙТИ В ИГРУ",
+        create_board: "СОЗДАТЬ ИГРУ",
+        ready_to_play: "Готовы играть?",
+        join_desc: "Введите 6-значный код комнаты",
+        access_code: "Код доступа",
+        room_code: "КОД КОМНАТЫ",
+        display_name: "Ваше имя",
+        choose_team: "Выберите команду",
+        customize_avatar: "Выберите аватар",
+        back: "Назад",
+        enter_arena: "Войти на арену",
+        broadcasting_from: "ТРАНСЛЯЦИЯ ИЗ",
+        start_game: "НАЧАТЬ ИГРУ",
+        exit: "ВЫХОД",
+        strike: "Промах",
+        next_question: "След. вопрос",
+        show_results: "Результаты",
+        clear_buzzer: "Сбросить кнопку",
+        wait_for_host: "Готовность",
+        awaiting_host: "Ожидайте начала трансляции",
+        broadcast_ended: "Трансляция окончена",
+        thanks_for_playing: "Спасибо за игру!",
+        live_topic: "Текущая тема",
+        buzz: "ЖМИ!",
+        mine: "МОЁ!",
+        wait: "ЖДИ",
+        connection_stable: "Связь: Стабильна",
+        final_standings: "Итоговый счёт",
+        champions: "ЧЕМПИОНЫ",
+        return_to_menu: "В МЕНЮ",
+        victory: "ПОБЕДА",
+        tournament_results: "Результаты турнира",
+        rounds: "Раундов",
+        ultimate_console: "Панель ведущего",
+        points: "ОЧК",
+        runner_up: "Второе место"
+      }
+    };
+
+    const MOCK_BOARD = {
+      id: 'm1',
+      title: { en: "Pop Culture Mania", ru: "Поп-культура" },
+      teams: [
+        { id: 't1', name: { en: "TEAM ALPHA", ru: "АЛЬФА" }, color: '#2563eb' },
+        { id: 't2', name: { en: "TEAM OMEGA", ru: "ОМЕГА" }, color: '#dc2626' }
+      ],
+      questions: [
+        {
+          id: 'q1',
+          prompt: { en: "Name a movie that everyone has seen at least once", ru: "Назовите фильм, который видел каждый хотя бы раз" },
+          answers: [
+            { id: 'a1', text: { en: "Titanic", ru: "Титаник" }, points: 45 },
+            { id: 'a2', text: { en: "Star Wars", ru: "Звездные войны" }, points: 32 },
+            { id: 'a3', text: { en: "The Lion King", ru: "Король Лев" }, points: 18 },
+            { id: 'a4', text: { en: "Home Alone", ru: "Один дома" }, points: 12 },
+            { id: 'a5', text: { en: "Toy Story", ru: "История игрушек" }, points: 8 },
+            { id: 'a6', text: { en: "Jurassic Park", ru: "Парк Юрского периода" }, points: 5 }
+          ]
+        },
+        {
+          id: 'q2',
+          prompt: { en: "Something you find in a messy teenager's room", ru: "Что можно найти в грязной комнате подростка" },
+          answers: [
+            { id: 'a7', text: { en: "Clothes", ru: "Одежда" }, points: 50 },
+            { id: 'a8', text: { en: "Trash / Food", ru: "Мусор / Еда" }, points: 25 },
+            { id: 'a9', text: { en: "Electronics", ru: "Электроника" }, points: 10 },
+            { id: 'a10', text: { en: "Dirty Socks", ru: "Грязные носки" }, points: 8 },
+            { id: 'a11', text: { en: "Schoolwork", ru: "Домашнее задание" }, points: 4 },
+            { id: 'a12', text: { en: "Unmade Bed", ru: "Незастеленная кровать" }, points: 3 }
+          ]
+        }
+      ]
+    };
 
     class SyncService {
       constructor(roomCode, onMessage) {
@@ -266,41 +382,6 @@
         window.removeEventListener('storage', this._storageHandler);
       }
     }
-
-    const MOCK_BOARD = {
-      id: 'm1',
-      title: "Pop Culture Mania",
-      teams: [
-        { id: 't1', name: 'TEAM ALPHA', color: '#2563eb' },
-        { id: 't2', name: 'TEAM OMEGA', color: '#dc2626' }
-      ],
-      questions: [
-        {
-          id: 'q1',
-          prompt: "Name a movie that everyone has seen at least once",
-          answers: [
-            { id: 'a1', text: "Titanic", points: 45 },
-            { id: 'a2', text: "Star Wars", points: 32 },
-            { id: 'a3', text: "The Lion King", points: 18 },
-            { id: 'a4', text: "Home Alone", points: 12 },
-            { id: 'a5', text: "Toy Story", points: 8 },
-            { id: 'a6', text: "Jurassic Park", points: 5 }
-          ]
-        },
-        {
-          id: 'q2',
-          prompt: "Something you find in a messy teenager's room",
-          answers: [
-            { id: 'a7', text: "Clothes", points: 50 },
-            { id: 'a8', text: "Trash / Food", points: 25 },
-            { id: 'a9', text: "Electronics", points: 10 },
-            { id: 'a10', text: "Dirty Socks", points: 8 },
-            { id: 'a11', text: "Schoolwork", points: 4 },
-            { id: 'a12', text: "Unmade Bed", points: 3 }
-          ]
-        }
-      ]
-    };
 
     const Confetti = () => {
       const pieces = useMemo(() => [...Array(50)].map((_, i) => ({
@@ -341,9 +422,11 @@
       </div>
     );
 
-    const AnswerTile = ({ answer, index, onClick, isHost }) => {
+    const AnswerTile = ({ answer, index, onClick, isHost, t, lang }) => {
       if (!answer) return <div className="h-24 rounded-2xl bg-slate-900/30 border border-slate-800 border-dashed"></div>;
       const isRevealed = answer.revealed;
+      const text = typeof answer.text === 'object' ? answer.text[lang] : answer.text;
+
       return (
         <div className={`card-wrap ${isRevealed ? 'revealed' : ''}`} onClick={onClick}>
           <div className="card-inner">
@@ -353,13 +436,13 @@
               ) : (
                 <>
                   <span className="text-blue-400 font-black text-sm uppercase tracking-widest">{index + 1}</span>
-                  <span className="font-bold text-center px-2 text-sm">{answer.text}</span>
-                  <span className="text-slate-500 font-black text-[10px]">{answer.points} PTS</span>
+                  <span className="font-bold text-center px-2 text-sm">{text}</span>
+                  <span className="text-slate-500 font-black text-[10px]">{answer.points} {t('points')}</span>
                 </>
               )}
             </div>
             <div className="card-back">
-              <span className="font-extrabold text-xl truncate uppercase tracking-tight">{answer.text}</span>
+              <span className="font-extrabold text-xl truncate uppercase tracking-tight">{text}</span>
               <div className="h-10 w-px bg-amber-900/20 mx-2"></div>
               <span className="font-black text-4xl">{answer.points}</span>
             </div>
@@ -368,7 +451,7 @@
       );
     };
 
-    function JoinView({ onJoin, onBack }) {
+    function JoinView({ onJoin, onBack, t, lang }) {
       const [code, setCode] = useState('');
       const [name, setName] = useState('');
       const [avatar, setAvatar] = useState(AVATARS[0]);
@@ -393,35 +476,35 @@
               <div className="inline-flex p-3 bg-blue-600/10 rounded-2xl text-blue-500 mb-2">
                 <Zap className="fill-current w-6 h-6" />
               </div>
-              <h1 className="text-4xl font-black game-title tracking-tight uppercase">Ready to Play?</h1>
-              <p className="text-slate-500 text-sm">Join the broadcast with your 6-digit code</p>
+              <h1 className="text-4xl font-black game-title tracking-tight uppercase">{t('ready_to_play')}</h1>
+              <p className="text-slate-500 text-sm">{t('join_desc')}</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-6">
                 <div className="space-y-2">
-                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Access Code</p>
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('access_code')}</p>
                    <input 
-                    type="text" maxLength={6} placeholder="ROOM CODE" 
+                    type="text" maxLength={6} placeholder={t('room_code')} 
                     className="w-full bg-slate-900/50 p-6 text-center text-4xl font-black rounded-2xl border-2 border-slate-800 focus:border-blue-500 outline-none tracking-widest transition-all" 
                     value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} 
                   />
                 </div>
                 <div className="space-y-2">
-                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Display Name</p>
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('display_name')}</p>
                    <input 
-                    type="text" placeholder="DISPLAY NAME" 
+                    type="text" placeholder={t('display_name')} 
                     className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 outline-none focus:border-blue-500 font-black uppercase text-sm tracking-widest text-center" 
                     value={name} onChange={e => setName(e.target.value)} 
                   />
                 </div>
                 {roomData && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Choose your team</p>
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('choose_team')}</p>
                     <div className="grid grid-cols-2 gap-4">
-                      {roomData.teams.map(t => (
-                        <button key={t.id} onClick={() => setTeamId(t.id)} className={`p-5 rounded-2xl border-2 transition-all font-black text-xs uppercase tracking-widest ${teamId === t.id ? 'border-white scale-105 shadow-xl' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{background: t.color}}>
-                          {t.name}
+                      {roomData.teams.map(tData => (
+                        <button key={tData.id} onClick={() => setTeamId(tData.id)} className={`p-5 rounded-2xl border-2 transition-all font-black text-xs uppercase tracking-widest ${teamId === tData.id ? 'border-white scale-105 shadow-xl' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{background: tData.color}}>
+                          {typeof tData.name === 'object' ? tData.name[lang] : tData.name}
                         </button>
                       ))}
                     </div>
@@ -429,24 +512,24 @@
                 )}
               </div>
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 text-center">Customize Avatar</p>
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 text-center">{t('customize_avatar')}</p>
                 <AvatarPicker selected={avatar} onSelect={setAvatar} />
               </div>
             </div>
 
             <div className="pt-6 grid grid-cols-2 gap-6">
-              <button onClick={onBack} className="btn btn-ghost py-6 text-lg uppercase tracking-widest rounded-2xl">Back</button>
-              <button onClick={() => onJoin(code, name, avatar, teamId)} disabled={!roomData || !name || !teamId} className="btn btn-primary py-6 text-xl tracking-tight uppercase shadow-xl rounded-2xl">Enter Arena</button>
+              <button onClick={onBack} className="btn btn-ghost py-6 text-lg uppercase tracking-widest rounded-2xl">{t('back')}</button>
+              <button onClick={() => onJoin(code, name, avatar, teamId)} disabled={!roomData || !name || !teamId} className="btn btn-primary py-6 text-xl tracking-tight uppercase shadow-xl rounded-2xl">{t('enter_arena')}</button>
             </div>
           </div>
         </div>
       );
     }
 
-    function GameEngine({ board, onExit }) {
+    function GameEngine({ board, onExit, t, lang }) {
       const [state, setState] = useState({
         qIdx: 0,
-        scores: {}, // Permanent team scores
+        scores: {}, 
         roundBank: 0, 
         strikes: 0,
         buzzedId: null,
@@ -459,7 +542,7 @@
       const syncRef = useRef(null);
       const currentQ = board.questions[state.qIdx];
 
-      const syncAll = useCallback(() => {
+      const syncAllInt = useCallback(() => {
         if (!syncRef.current) return;
         syncRef.current.send('SYNC', {
           prompt: currentQ?.prompt || "",
@@ -472,15 +555,15 @@
           answers: currentQ?.answers.map((a, i) => ({
             index: i,
             revealed: state.revealedIds.includes(a.id),
-            text: state.revealedIds.includes(a.id) ? a.text : null,
-            points: state.revealedIds.includes(a.id) ? a.points : null
+            text: a.text,
+            points: a.points
           })) || []
         });
       }, [currentQ, state, board.teams]);
 
       useEffect(() => {
         syncRef.current = new SyncService(state.roomCode, (msg) => {
-          if (msg.type === 'REQUEST_SYNC') syncAll();
+          if (msg.type === 'REQUEST_SYNC') syncAllInt();
           if (msg.type === 'JOIN') setState(s => s.players.find(p => p.id === msg.payload.id) ? s : ({...s, players: [...s.players, msg.payload]}));
           if (msg.type === 'UPDATE_PROFILE') setState(s => ({...s, players: s.players.map(p => p.id === msg.payload.id ? {...p, ...msg.payload} : p)}));
           if (msg.type === 'BUZZ' && state.gameStatus === 'PLAYING') {
@@ -492,9 +575,9 @@
         });
         const beat = setInterval(() => syncRef.current.send('HEARTBEAT', { teams: board.teams, gameStatus: state.gameStatus, prompt: currentQ?.prompt || "" }), 2000);
         return () => { clearInterval(beat); syncRef.current?.close(); };
-      }, [state.roomCode, state.gameStatus, syncAll, currentQ]);
+      }, [state.roomCode, state.gameStatus, currentQ, board.teams, syncAllInt]);
 
-      useEffect(() => { syncAll(); }, [state.revealedIds, state.gameStatus, state.strikes, state.buzzedId, state.scores, state.qIdx, state.roundBank]);
+      useEffect(() => { syncAllInt(); }, [state.revealedIds, state.gameStatus, state.strikes, state.buzzedId, state.scores, state.qIdx, state.roundBank, syncAllInt]);
 
       const onToggleReveal = (aid) => {
         const isRevealed = state.revealedIds.includes(aid);
@@ -506,13 +589,11 @@
           let newScores = { ...s.scores };
           let newRoundBank = isRevealed ? s.roundBank - pts : s.roundBank + pts;
 
-          // AWARD AUTO-POINT: If someone is BUZZED, reveal adds points directly to their team
           if (!isRevealed && s.buzzedId) {
              const buzzedPlayer = s.players.find(p => p.id === s.buzzedId);
              if (buzzedPlayer) {
                 const teamId = buzzedPlayer.teamId;
                 newScores[teamId] = (newScores[teamId] || 0) + pts;
-                // Since points are added to team, the round bank shouldn't accumulate them for a separate manual award
                 newRoundBank = 0; 
              }
           }
@@ -540,7 +621,6 @@
         }
       };
 
-      // PODIUM VIEW
       if (state.gameStatus === 'PODIUM') {
         const sortedTeams = [...board.teams].sort((a, b) => (state.scores[b.id] || 0) - (state.scores[a.id] || 0));
         
@@ -550,12 +630,11 @@
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)] opacity-30"></div>
             
             <div className="text-center z-10 space-y-4 animate-in fade-in duration-1000">
-               <h1 className="text-8xl font-black game-title tracking-tighter italic text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">VICTORY</h1>
-               <p className="text-blue-400 uppercase tracking-[1em] font-black text-sm">The Tournament Results</p>
+               <h1 className="text-8xl font-black game-title tracking-tighter italic text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">{t('victory')}</h1>
+               <p className="text-blue-400 uppercase tracking-[1em] font-black text-sm">{t('tournament_results')}</p>
             </div>
             
             <div className="podium-container z-10">
-               {/* 2nd Place */}
                {sortedTeams[1] && (
                  <div className="podium-place podium-2 animate-in slide-in-from-bottom-20 duration-1000 delay-200">
                     <div className="absolute -top-40 flex flex-col items-center space-y-2">
@@ -569,12 +648,12 @@
                        </div>
                     </div>
                     <Medal className="w-16 h-16 text-slate-300 mb-4" />
-                    <span className="text-3xl font-black text-slate-100 mb-1">{sortedTeams[1].name}</span>
+                    <span className="text-3xl font-black text-slate-100 mb-1">{sortedTeams[1].name[lang]}</span>
                     <span className="text-5xl font-black text-white">{state.scores[sortedTeams[1].id] || 0}</span>
+                    <span className="absolute bottom-4 uppercase font-black tracking-widest text-slate-400 text-[10px]">{t('runner_up')}</span>
                  </div>
                )}
 
-               {/* 1st Place */}
                {sortedTeams[0] && (
                  <div className="podium-place podium-1 animate-in slide-in-from-bottom-20 duration-700">
                     <div className="absolute -top-48 flex flex-col items-center space-y-4">
@@ -588,10 +667,10 @@
                        </div>
                     </div>
                     <Trophy className="w-24 h-24 text-amber-200 mb-6 drop-shadow-[0_0_30px_rgba(252,211,77,0.8)] animate-bounce" />
-                    <span className="text-4xl font-black text-amber-50 mb-2">{sortedTeams[0].name}</span>
+                    <span className="text-4xl font-black text-amber-50 mb-2">{sortedTeams[0].name[lang]}</span>
                     <span className="text-7xl font-black text-white mb-4">{state.scores[sortedTeams[0].id] || 0}</span>
                     <div className="bg-amber-900/60 px-8 py-3 rounded-full border-2 border-amber-400 shadow-2xl">
-                       <span className="uppercase font-black tracking-[0.4em] text-amber-200 text-sm">CHAMPIONS</span>
+                       <span className="uppercase font-black tracking-[0.4em] text-amber-200 text-sm">{t('champions')}</span>
                     </div>
                  </div>
                )}
@@ -599,31 +678,33 @@
 
             <div className="mt-24 z-10 flex gap-8">
                <button onClick={onExit} className="btn bg-white text-slate-950 px-16 py-6 text-xl rounded-3xl shadow-[0_20px_40px_rgba(255,255,255,0.2)] hover:scale-105 transition-all flex items-center gap-4">
-                  <ArrowLeft className="w-6 h-6" /> RETURN TO MENU
+                  <ArrowLeft className="w-6 h-6" /> {t('return_to_menu')}
                </button>
             </div>
           </div>
         );
       }
 
+      const currentPrompt = typeof currentQ?.prompt === 'object' ? currentQ.prompt[lang] : currentQ?.prompt;
+
       if (state.gameStatus === 'LOBBY') return (
         <div className="min-h-screen flex flex-col items-center justify-center p-12 bg-slate-950 space-y-16">
           <div className="text-center space-y-6">
-            <h2 className="text-blue-500 font-black uppercase tracking-[0.5em] text-xs">BROADCASTING FROM</h2>
+            <h2 className="text-blue-500 font-black uppercase tracking-[0.5em] text-xs">{t('broadcasting_from')}</h2>
             <div className="bg-white text-slate-950 px-24 py-12 rounded-[4rem] shadow-[0_0_120px_rgba(255,255,255,0.1)] relative">
                <h1 className="text-[12rem] leading-none font-black tracking-tighter">{state.roomCode}</h1>
                <div className="absolute -top-4 -right-4 bg-blue-600 text-white p-4 rounded-full shadow-2xl"><Users className="w-8 h-8" /></div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-10 w-full max-w-6xl">
-            {board.teams.map(t => (
-              <div key={t.id} className="glass p-10 rounded-[3rem] border-t-8 space-y-6" style={{borderColor: t.color}}>
+            {board.teams.map(tData => (
+              <div key={tData.id} className="glass p-10 rounded-[3rem] border-t-8 space-y-6" style={{borderColor: tData.color}}>
                 <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                  <h3 className="text-2xl font-black uppercase" style={{color: t.color}}>{t.name}</h3>
-                  <span className="text-xs font-bold text-slate-500 uppercase">{state.players.filter(p => p.teamId === t.id).length} Connected</span>
+                  <h3 className="text-2xl font-black uppercase" style={{color: tData.color}}>{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</h3>
+                  <span className="text-xs font-bold text-slate-500 uppercase">{state.players.filter(p => p.teamId === tData.id).length} Connected</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  {state.players.filter(p => p.teamId === t.id).map(p => (
+                  {state.players.filter(p => p.teamId === tData.id).map(p => (
                     <div key={p.id} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800 flex items-center gap-4 animate-in fade-in zoom-in">
                       <span className="text-3xl">{p.avatar}</span>
                       <span className="font-bold text-base truncate uppercase tracking-tight">{p.name}</span>
@@ -634,15 +715,14 @@
             ))}
           </div>
           <div className="flex gap-8">
-            <button onClick={() => setState(s => ({...s, gameStatus: 'PLAYING'}))} className="btn btn-primary px-24 py-8 text-3xl tracking-tight rounded-[2rem] shadow-2xl">START GAME</button>
-            <button onClick={onExit} className="btn btn-secondary px-10 rounded-2xl">EXIT</button>
+            <button onClick={() => setState(s => ({...s, gameStatus: 'PLAYING'}))} className="btn btn-primary px-24 py-8 text-3xl tracking-tight rounded-[2rem] shadow-2xl">{t('start_game')}</button>
+            <button onClick={onExit} className="btn btn-secondary px-10 rounded-2xl">{t('exit')}</button>
           </div>
         </div>
       );
 
       return (
         <div className="min-h-screen p-10 flex flex-col space-y-12 animate-in fade-in duration-700 relative overflow-hidden">
-          {/* Enhanced Full Screen Strike Overlay */}
           {state.showStrikeAnim && (
             <div className="strike-overlay">
                <div className="flex gap-16">
@@ -655,21 +735,19 @@
             </div>
           )}
 
-          {/* Header Scores - Manual award removed, shows team status */}
           <div className="flex justify-between items-center max-w-7xl mx-auto w-full">
-             {board.teams.map(t => (
-                <div key={t.id} className="glass p-10 rounded-[2.5rem] border-b-[12px] min-w-[320px] text-center shadow-2xl relative" style={{borderBottomColor: t.color}}>
-                   <p className="text-8xl font-black mb-2 leading-none">{state.scores[t.id] || 0}</p>
-                   <p className="text-xs font-black uppercase text-slate-500 tracking-[0.4em]">{t.name}</p>
+             {board.teams.map(tData => (
+                <div key={tData.id} className="glass p-10 rounded-[2.5rem] border-b-[12px] min-w-[320px] text-center shadow-2xl relative" style={{borderBottomColor: tData.color}}>
+                   <p className="text-8xl font-black mb-2 leading-none">{state.scores[tData.id] || 0}</p>
+                   <p className="text-xs font-black uppercase text-slate-500 tracking-[0.4em]">{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</p>
                 </div>
              ))}
           </div>
 
-          {/* Question Board */}
           <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col space-y-8 relative">
             <div className="glass p-16 rounded-[4rem] text-center relative border-2 border-white/5 shadow-2xl overflow-hidden">
                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)]"></div>
-               <h2 className="text-5xl font-black italic drop-shadow-2xl leading-tight tracking-tight text-white relative">"{currentQ.prompt}"</h2>
+               <h2 className="text-5xl font-black italic drop-shadow-2xl leading-tight tracking-tight text-white relative">"{currentPrompt}"</h2>
                
                {state.buzzedId && (
                   <div className="absolute inset-0 bg-amber-400 flex flex-col items-center justify-center animate-in zoom-in duration-300 rounded-[4rem] z-50">
@@ -678,7 +756,7 @@
                         <span className="text-6xl">{state.players.find(p => p.id === state.buzzedId)?.avatar}</span>
                         <span className="text-4xl font-black uppercase tracking-tight">{state.players.find(p => p.id === state.buzzedId)?.name}</span>
                      </div>
-                     <button onClick={() => setState(s => ({...s, buzzedId: null}))} className="mt-10 bg-amber-950 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:scale-105 transition-all">Clear Buzzer</button>
+                     <button onClick={() => setState(s => ({...s, buzzedId: null}))} className="mt-10 bg-amber-950 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:scale-105 transition-all">{t('clear_buzzer')}</button>
                   </div>
                )}
 
@@ -695,16 +773,17 @@
                     answer={currentQ.answers[i] ? {...currentQ.answers[i], revealed: state.revealedIds.includes(currentQ.answers[i].id)} : null} 
                     isHost={true}
                     onClick={() => currentQ.answers[i] && onToggleReveal(currentQ.answers[i].id)} 
+                    t={t}
+                    lang={lang}
                   />
                ))}
             </div>
           </div>
 
-          {/* Host Controls */}
           <div className="fixed bottom-10 right-10 flex gap-6 glass p-6 rounded-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] z-[60]">
-             <button onClick={onStrike} className="btn btn-danger w-48 py-5 text-lg uppercase tracking-widest shadow-xl">Strike</button>
+             <button onClick={onStrike} className="btn btn-danger w-48 py-5 text-lg uppercase tracking-widest shadow-xl">{t('strike')}</button>
              <button onClick={onNext} className="btn btn-primary w-72 py-5 text-lg flex items-center gap-3 uppercase tracking-tighter shadow-xl">
-               {state.qIdx + 1 >= board.questions.length ? 'Show Results' : 'Next Question'} <ChevronRightCircle className="w-6 h-6" />
+               {state.qIdx + 1 >= board.questions.length ? t('show_results') : t('next_question')} <ChevronRightCircle className="w-6 h-6" />
              </button>
              <button onClick={onExit} className="btn btn-secondary px-8 shadow-lg"><LogOut className="w-6 h-6" /></button>
           </div>
@@ -712,7 +791,7 @@
       );
     }
 
-    function PlayerInterface({ code, name, avatar, id, teamId, onExit }) {
+    function PlayerInterface({ code, name, avatar, id, teamId, onExit, t, lang }) {
       const [sync, setSync] = useState(null);
       const [status, setStatus] = useState('READY');
       const [isEditing, setIsEditing] = useState(false);
@@ -743,15 +822,17 @@
       };
 
       if (!sync) return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 space-y-8 bg-slate-950">
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 space-y-8 bg-slate-950 text-center">
            <div className="relative">
               <div className="w-24 h-24 border-8 border-slate-800 border-t-blue-600 rounded-full animate-spin"></div>
               <Zap className="absolute inset-0 m-auto text-blue-500 w-8 h-8 fill-current animate-pulse" />
            </div>
-           <p className="font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse text-xs">Awaiting broadcast data...</p>
-           <button onClick={onExit} className="btn btn-ghost">Cancel</button>
+           <p className="font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse text-xs">...</p>
+           <button onClick={onExit} className="btn btn-ghost">{t('back')}</button>
         </div>
       );
+
+      const currentPrompt = typeof sync.prompt === 'object' ? sync.prompt[lang] : sync.prompt;
 
       return (
         <div className="min-h-screen flex flex-col items-center p-8 space-y-12 bg-slate-950">
@@ -772,17 +853,17 @@
           {isEditing && (
             <div className="w-full max-w-2xl glass p-10 rounded-[3rem] space-y-8 animate-in slide-in-from-top-6 z-[100] border-blue-500/20 shadow-4xl">
                <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] ml-2 text-center">Customize Profile</p>
+                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] ml-2 text-center">{t('customize_avatar')}</p>
                   <AvatarPicker selected={editAvatar} onSelect={setEditAvatar} />
                   <input 
                     type="text" 
                     className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 font-black uppercase text-center tracking-widest outline-none focus:border-blue-500 transition-all" 
                     value={editName} 
                     onChange={e => setEditName(e.target.value)} 
-                    placeholder="ENTER NAME"
+                    placeholder={t('display_name')}
                   />
                </div>
-               <button onClick={handleUpdateProfile} className="btn btn-primary w-full py-5 text-xl tracking-tight shadow-xl uppercase rounded-2xl">Update Profile</button>
+               <button onClick={handleUpdateProfile} className="btn btn-primary w-full py-5 text-xl tracking-tight shadow-xl uppercase rounded-2xl">Save</button>
             </div>
           )}
 
@@ -790,20 +871,20 @@
              {sync.gameStatus === 'LOBBY' ? (
                 <div className="py-24 space-y-10">
                    <Users className="w-16 h-16 text-blue-500 mx-auto" />
-                   <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none">Stay Ready</h2>
-                   <p className="text-slate-500 uppercase font-black tracking-[0.5em] text-[10px]">Awaiting host to start broadcast</p>
+                   <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none">{t('wait_for_host')}</h2>
+                   <p className="text-slate-500 uppercase font-black tracking-[0.5em] text-[10px]">{t('awaiting_host')}</p>
                 </div>
              ) : sync.gameStatus === 'PODIUM' ? (
                 <div className="py-24 space-y-10 animate-in zoom-in">
                    <Trophy className="w-32 h-32 text-amber-500 mx-auto" />
-                   <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none text-amber-100">Broadcast Ended</h2>
-                   <p className="text-slate-400 font-bold tracking-widest uppercase">Thank you for playing!</p>
+                   <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none text-amber-100">{t('broadcast_ended')}</h2>
+                   <p className="text-slate-400 font-bold tracking-widest uppercase">{t('thanks_for_playing')}</p>
                 </div>
              ) : (
                 <div className="space-y-16 animate-in fade-in duration-500">
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] animate-pulse">Live Topic</p>
-                    <h2 className="text-5xl font-black italic text-blue-50 leading-tight drop-shadow-lg">"{sync.prompt}"</h2>
+                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] animate-pulse">{t('live_topic')}</p>
+                    <h2 className="text-5xl font-black italic text-blue-50 leading-tight drop-shadow-lg">"{currentPrompt}"</h2>
                   </div>
 
                   <div className="flex justify-center relative">
@@ -816,16 +897,9 @@
                            'bg-slate-900 border-slate-800 opacity-20 grayscale cursor-not-allowed'
                         }`}
                      >
-                        <span className="drop-shadow-2xl">{sync.buzzedId === id ? 'MINE!' : sync.buzzedId ? 'WAIT' : 'BUZZ'}</span>
+                        <span className="drop-shadow-2xl">{sync.buzzedId === id ? t('mine') : sync.buzzedId ? t('wait') : t('buzz')}</span>
                      </button>
                   </div>
-                  
-                  {sync.buzzedId && sync.buzzedId !== id && (
-                    <div className="flex items-center justify-center gap-3 bg-red-600/10 px-6 py-3 rounded-2xl border border-red-500/20">
-                       <X className="text-red-500 w-5 h-5" />
-                       <span className="text-xs font-black text-red-500 uppercase tracking-[0.2em]">Locked Out - Opponent First</span>
-                    </div>
-                  )}
                 </div>
              )}
           </div>
@@ -838,15 +912,18 @@
       const [boards, setBoards] = useState([]);
       const [activeBoard, setActiveBoard] = useState(null);
       const [pInfo, setPInfo] = useState({ code: '', name: '', avatar: AVATARS[0], teamId: '', id: genId() });
+      const [lang, setLang] = useState('en');
 
       useEffect(() => {
         const saved = localStorage.getItem('feud_v3_boards');
         setBoards(saved ? JSON.parse(saved) : [MOCK_BOARD]);
       }, []);
 
-      if (view === 'JOIN') return <JoinView onBack={() => setView('HOME')} onJoin={(c, n, a, tid) => { setPInfo({ code: c, name: n, avatar: a, teamId: tid, id: genId() }); setView('PLAYER'); }} />;
-      if (view === 'PLAYER') return <PlayerInterface {...pInfo} onExit={() => setView('HOME')} />;
-      if (view === 'PLAY') return <GameEngine board={activeBoard} onExit={() => setView('HOME')} />;
+      const t = (key) => TRANSLATIONS[lang][key] || key;
+
+      if (view === 'JOIN') return <JoinView t={t} lang={lang} onBack={() => setView('HOME')} onJoin={(c, n, a, tid) => { setPInfo({ code: c, name: n, avatar: a, teamId: tid, id: genId() }); setView('PLAYER'); }} />;
+      if (view === 'PLAYER') return <PlayerInterface t={t} lang={lang} {...pInfo} onExit={() => setView('HOME')} />;
+      if (view === 'PLAY') return <GameEngine t={t} lang={lang} board={activeBoard} onExit={() => setView('HOME')} />;
 
       return (
         <div className="min-h-screen flex flex-col bg-slate-950 text-white selection:bg-blue-600/30">
@@ -855,9 +932,16 @@
                 <div className="p-3 bg-blue-600 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)]"><Zap className="fill-current w-6 h-6" /></div>
                 <h1 className="text-3xl font-black game-title tracking-tighter italic">FEUD PRO</h1>
              </div>
-             <div className="flex gap-4">
-                <button onClick={() => setView('JOIN')} className="btn btn-secondary px-10 py-4 rounded-2xl border-white/5 hover:border-white/10 transition-all font-black text-xs uppercase tracking-widest">JOIN BROADCAST</button>
-                <button onClick={() => alert("Board building is active. Select an existing one below!")} className="btn btn-primary px-10 py-4 rounded-2xl shadow-xl transition-all hover:scale-105 font-black text-xs uppercase tracking-widest"><Plus className="w-4 h-4" /> CREATE BOARD</button>
+             <div className="flex gap-4 items-center">
+                <button 
+                  onClick={() => setLang(l => l === 'en' ? 'ru' : 'en')}
+                  className="btn btn-ghost p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all flex items-center gap-2"
+                >
+                  <Languages className="w-5 h-5" />
+                  <span className="uppercase font-black text-xs">{lang === 'en' ? 'RU' : 'EN'}</span>
+                </button>
+                <button onClick={() => setView('JOIN')} className="btn btn-secondary px-10 py-4 rounded-2xl border-white/5 hover:border-white/10 transition-all font-black text-xs uppercase tracking-widest">{t('join_broadcast')}</button>
+                <button onClick={() => alert("Board building is active. Select an existing one below!")} className="btn btn-primary px-10 py-4 rounded-2xl shadow-xl transition-all hover:scale-105 font-black text-xs uppercase tracking-widest"><Plus className="w-4 h-4" /> {t('create_board')}</button>
              </div>
           </header>
 
@@ -867,7 +951,7 @@
                 <h2 className="text-[18rem] font-black game-title leading-none tracking-tighter italic opacity-95 drop-shadow-[0_20px_80px_rgba(0,0,0,0.8)] select-none">FEUD</h2>
                 <div className="flex items-center justify-center gap-6 mt-4">
                   <div className="h-px w-24 bg-gradient-to-r from-transparent to-blue-500"></div>
-                  <p className="text-blue-500 font-black uppercase tracking-[1.5em] text-xs font-semibold italic">Ultimate Host Console</p>
+                  <p className="text-blue-500 font-black uppercase tracking-[1.5em] text-xs font-semibold italic">{t('ultimate_console')}</p>
                   <div className="h-px w-24 bg-gradient-to-l from-transparent to-blue-500"></div>
                 </div>
              </div>
@@ -877,16 +961,16 @@
                    <div key={b.id} className="glass p-12 rounded-[4rem] cursor-pointer hover:border-blue-500/50 transition-all hover:scale-[1.05] group shadow-[0_40px_100px_-30px_rgba(0,0,0,1)] relative overflow-hidden" onClick={() => { setActiveBoard(b); setView('PLAY'); }}>
                       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div className="flex justify-between items-start mb-12 relative z-10">
-                         <h3 className="text-4xl font-black italic uppercase leading-tight group-hover:text-blue-400 transition-colors tracking-tighter">{b.title}</h3>
+                         <h3 className="text-4xl font-black italic uppercase leading-tight group-hover:text-blue-400 transition-colors tracking-tighter">{typeof b.title === 'object' ? b.title[lang] : b.title}</h3>
                          <div className="p-6 bg-slate-950 rounded-[2rem] group-hover:bg-blue-600 group-hover:scale-110 transition-all shadow-2xl"><Play className="fill-current w-8 h-8" /></div>
                       </div>
                       <div className="flex justify-between items-center border-t border-white/5 pt-10 relative z-10">
                          <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] mb-1">Rounds</span>
+                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] mb-1">{t('rounds')}</span>
                             <span className="text-2xl font-black text-white">{b.questions.length}</span>
                          </div>
                          <div className="flex -space-x-5">
-                            {b.teams.map(t => <div key={t.id} className="w-12 h-12 rounded-full border-4 border-slate-900 shadow-2xl relative transition-transform group-hover:-translate-y-2" style={{background: t.color}}></div>)}
+                            {b.teams.map(teamData => <div key={teamData.id} className="w-12 h-12 rounded-full border-4 border-slate-900 shadow-2xl relative transition-transform group-hover:-translate-y-2" style={{background: teamData.color}}></div>)}
                          </div>
                       </div>
                    </div>
