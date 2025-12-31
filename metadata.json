@@ -1,0 +1,5 @@
+{
+  "name": "TEST COPY of DEPLOY of Family Feud Host & Creator",
+  "description": "A full-featured game show host application. Create custom Family Feud boards, generate new questions using Gemini AI, and host live games with friends including sound effects, strikes, and animated answer reveals.",
+  "requestFramePermissions": []
+}

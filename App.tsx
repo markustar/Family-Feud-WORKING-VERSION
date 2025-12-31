@@ -1,0 +1,1 @@
+// Logic moved to index.tsx to bypass browser MIME type restrictions on relative imports during local development.
