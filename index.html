@@ -6,21 +6,19 @@
   <title>FEUD HOST - Create & Play</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="index.css">
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
       background-color: #020617;
       color: white;
-      overflow-x: hidden;
       margin: 0;
+      overflow-x: hidden;
     }
     .game-font { font-family: 'Luckiest Guy', cursive; }
-    .transform-style-3d { transform-style: preserve-3d; }
-    .rotate-x-180 { transform: rotateX(180deg); }
-    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
     .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .rotate-x-180 { transform: rotateX(180deg); }
     
     @keyframes strike-shake {
       0%, 100% { transform: translateX(0); }
@@ -32,12 +30,6 @@
     @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     .animate-float { animation: floating 3s ease-in-out infinite; }
     
-    @keyframes buzzed-jump {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-6px) scale(1.02); }
-    }
-    .animate-buzzed-jump { animation: buzzed-jump 0.6s ease-in-out infinite; }
-
     @keyframes buzzer-pulse {
       0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
       70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
@@ -46,36 +38,650 @@
     .animate-buzzer-ready { animation: buzzer-pulse 2s infinite; }
 
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    
     .glass-effect {
       background: rgba(15, 23, 42, 0.6);
       backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .dropdown-shadow { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5); }
   </style>
-  <script>
-    window.process = window.process || { env: { API_KEY: "" } };
-  </script>
   <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.460.0?external=react",
-    "@google/genai": "https://esm.sh/@google/genai@1.3.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19.0.0",
+      "react-dom": "https://esm.sh/react-dom@19.0.0",
+      "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+      "lucide-react": "https://esm.sh/lucide-react@0.460.0?external=react",
+      "@google/genai": "https://esm.sh/@google/genai@1.3.0"
+    }
   }
-}
-</script>
+  </script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-presets="react,typescript" data-type="module" src="./index.tsx"></script>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useCallback, useRef } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { 
+      Play, Layout, Trash2, Users, LogIn, LogOut, User as UserIcon,
+      Shield, ChevronRight, XCircle, Trophy, Star, Zap, X as LucideX, 
+      RefreshCcw, Palette, CheckCircle2, Plus, Sparkles, Save, ChevronLeft, 
+      AlertCircle, Radio, Check, Mail, Lock, ChevronDown
+    } from 'lucide-react';
+    import { GoogleGenAI, Type } from "@google/genai";
+
+    // --- UTILS ---
+    const generateId = () => Math.random().toString(36).substr(2, 9);
+
+    // --- MULTIPLAYER SERVICE ---
+    class MultiplayerService {
+      constructor(roomCode, onMessage) {
+        this.channel = new BroadcastChannel("feud_room_" + roomCode);
+        this.onMessageCallback = onMessage;
+        this.channel.onmessage = (event) => this.onMessageCallback(event.data);
+      }
+      send(message) {
+        if (this.channel) this.channel.postMessage(message);
+      }
+      close() {
+        if (this.channel) {
+          this.channel.close();
+          this.channel = null;
+        }
+      }
+    }
+
+    // --- TRANSLATIONS ---
+    const translations = {
+      en: { 
+        appName: "FEUD HOST", branding: "FAMILY FEUD", joinRoom: "Join Room", 
+        newBoard: "New Board", login: "Login", logout: "Logout", createBoard: "Create Board", 
+        joinAsPlayer: "Join as Player", yourBoards: "Your Saved Boards", publicSamples: "Public Samples", 
+        roomCode: "Room Code", yourName: "Your Name", pickTeam: "Pick a Team", joinGame: "JOIN GAME", 
+        backHome: "Back Home", strike: "Strike", nextQuestion: "Next Question", 
+        startBroadcast: "START BROADCAST", cancelSession: "Cancel Session", 
+        backToMenu: "Back to Menu", customize: "Customize", points: "POINTS", 
+        saveGame: "Save Game", aiAssistant: "AI Survey Assistant", createButton: "CREATE BOARD", 
+        gameTheme: "Game Theme (e.g. Marvel Movies...)", boardEditor: "BOARD EDITOR", 
+        competitors: "Competitors", roundRules: "Round Rules", welcomeBack: "Welcome Back!",
+        accountCreated: "Account Created!", redirecting: "Redirecting...", hostLogin: "Host Login", 
+        registerHost: "Register Host", email: "Email", password: "Password", displayName: "Name", 
+        enterDashboard: "ENTER DASHBOARD", createAccount: "CREATE ACCOUNT", 
+        newHere: "New? Register", alreadyHost: "Have account? Login", readyToWin: "Ready!", locked: "Locked!"
+      },
+      ru: { 
+        appName: "FEUD HOST", branding: "FAMILY FEUD", joinRoom: "Войти", 
+        newBoard: "Новая игра", login: "Вход", logout: "Выход", createBoard: "Создать игру", 
+        joinAsPlayer: "Играть", yourBoards: "Ваши игры", publicSamples: "Примеры", 
+        roomCode: "Код комнаты", yourName: "Имя", pickTeam: "Команда", joinGame: "ВСТУПИТЬ", 
+        backHome: "Назад", strike: "Промах", nextQuestion: "След. вопрос", 
+        startBroadcast: "НАЧАТЬ", cancelSession: "Отмена", 
+        backToMenu: "В меню", customize: "Образ", points: "ОЧКИ", 
+        saveGame: "Сохранить", aiAssistant: "ИИ Помощник", createButton: "СОЗДАТЬ", 
+        gameTheme: "Тема (напр. Марвел...)", boardEditor: "РЕДАКТОР", 
+        competitors: "Участники", roundRules: "Правила", welcomeBack: "С возвращением!",
+        accountCreated: "Готово!", redirecting: "Загрузка...", hostLogin: "Вход", 
+        registerHost: "Регистрация", email: "Email", password: "Пароль", displayName: "Имя", 
+        enterDashboard: "ВОЙТИ", createAccount: "СОЗДАТЬ", 
+        newHere: "Регистрация", alreadyHost: "Есть аккаунт?", readyToWin: "Готов!", locked: "Блок!"
+      },
+      es: { 
+        appName: "FEUD HOST", branding: "FAMILY FEUD", joinRoom: "Unirse", 
+        newBoard: "Nuevo", login: "Entrar", logout: "Salir", createBoard: "Crear", 
+        joinAsPlayer: "Jugar", yourBoards: "Mis Tableros", publicSamples: "Ejemplos", 
+        roomCode: "Código", yourName: "Nombre", pickTeam: "Equipo", joinGame: "ENTRAR", 
+        backHome: "Inicio", strike: "Error", nextQuestion: "Siguiente", 
+        startBroadcast: "INICIAR", cancelSession: "Cancelar", 
+        backToMenu: "Menú", customize: "Perfil", points: "PUNTOS", 
+        saveGame: "Guardar", aiAssistant: "IA Asistente", createButton: "CREAR", 
+        gameTheme: "Tema (ej. Cine...)", boardEditor: "EDITOR", 
+        competitors: "Equipos", roundRules: "Reglas", welcomeBack: "¡Hola!",
+        accountCreated: "¡Listo!", redirecting: "Cargando...", hostLogin: "Entrar", 
+        registerHost: "Registro", email: "Email", password: "Clave", displayName: "Nombre", 
+        enterDashboard: "ENTRAR", createAccount: "CREAR", 
+        newHere: "Regístrate", alreadyHost: "¿Ya tienes cuenta?", readyToWin: "¡Listo!", locked: "¡Bloqueo!"
+      }
+    };
+
+    // --- GEMINI SERVICE ---
+    async function generateFeudGame(topic, lang = 'en') {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const langPrompt = lang === 'ru' ? 'in Russian' : lang === 'es' ? 'in Spanish' : 'in English';
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: "Generate a Family Feud style game for: " + topic + " " + langPrompt + ". 5 questions, 6-8 answers each. JSON only.",
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              questions: { 
+                type: Type.ARRAY, 
+                items: { 
+                  type: Type.OBJECT, 
+                  properties: { 
+                    prompt: { type: Type.STRING }, 
+                    answers: { 
+                      type: Type.ARRAY, 
+                      items: { 
+                        type: Type.OBJECT, 
+                        properties: { 
+                          text: { type: Type.STRING }, 
+                          points: { type: Type.INTEGER } 
+                        },
+                        required: ["text", "points"]
+                      } 
+                    } 
+                  },
+                  required: ["prompt", "answers"]
+                } 
+              }
+            },
+            required: ["title", "questions"]
+          }
+        }
+      });
+      const rawData = JSON.parse(response.text.trim());
+      return {
+        id: generateId(),
+        title: rawData.title,
+        createdAt: Date.now(),
+        teams: [{id: 't1', name: 'Team 1', color: '#2563eb'}, {id: 't2', name: 'Team 2', color: '#dc2626'}],
+        strikePenalty: 25,
+        questions: rawData.questions.map(q => ({
+          id: generateId(),
+          prompt: q.prompt,
+          answers: q.answers.map(a => ({
+            id: generateId(),
+            text: a.text,
+            points: a.points,
+            revealed: false
+          }))
+        }))
+      };
+    }
+
+    // --- SHARED COMPONENTS ---
+    const Button = ({ children, variant = 'primary', size = 'md', className = '', ...props }) => {
+      const variants = {
+        primary: "bg-blue-600 text-white hover:bg-blue-700",
+        secondary: "bg-slate-700 text-white hover:bg-slate-600",
+        danger: "bg-red-600 text-white hover:bg-red-700",
+        ghost: "bg-transparent text-slate-300 hover:bg-slate-800"
+      };
+      const sizes = { sm: "px-3 py-1 text-sm", md: "px-5 py-2", lg: "px-8 py-3 text-lg" };
+      return (
+        <button 
+          className={"inline-flex items-center justify-center font-bold rounded-xl transition-all active:scale-95 " + variants[variant] + " " + sizes[size] + " " + className} 
+          {...props}
+        >
+          {children}
+        </button>
+      );
+    };
+
+    const AnswerTile = ({ answer, index, onClick, hostMode = false }) => {
+      if (!answer) return <div className="h-16 bg-blue-900/30 border-2 border-blue-800 rounded flex items-center justify-center"><span className="text-blue-700 font-bold text-2xl">{index + 1}</span></div>;
+      return (
+        <div onClick={(!answer.revealed && onClick) ? onClick : undefined} className="relative h-16 w-full perspective-1000 cursor-pointer">
+          <div className={"absolute inset-0 w-full h-full transition-all duration-700 transform-style-3d " + (answer.revealed ? "rotate-x-180" : "")}>
+            <div className="absolute inset-0 w-full h-full backface-hidden flex items-center justify-center bg-blue-600 border-2 border-blue-400 rounded-lg shadow-xl">
+              <span className="text-white font-bold text-2xl game-font">{index + 1}</span>
+              {hostMode && !answer.revealed && <span className="absolute right-4 text-white/20 text-[10px] uppercase font-bold">{answer.text}</span>}
+            </div>
+            <div className="absolute inset-0 w-full h-full backface-hidden flex items-center justify-between px-4 bg-yellow-500 border-2 border-yellow-200 rounded-lg shadow-xl text-blue-950 rotate-x-180">
+              <span className="font-bold uppercase truncate text-lg">{answer.text}</span>
+              <span className="font-black text-xl game-font">{answer.points}</span>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const StrikeDisplay = ({ strikes }) => {
+      if (!strikes) return null;
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center gap-12 bg-black/60 backdrop-blur-md">
+          {[...Array(strikes)].map((_, i) => (
+            <div key={i} className="animate-strike text-[200px] text-red-600 font-black game-font">X</div>
+          ))}
+        </div>
+      );
+    };
+
+    const LanguagePicker = ({ current, onChange }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      const langs = [{ c: 'en', l: 'English', f: '🇺🇸' }, { c: 'ru', l: 'Русский', f: '🇷🇺' }, { c: 'es', l: 'Español', f: '🇲🇽' }];
+      return (
+        <div className="relative">
+          <button onClick={() => setIsOpen(!isOpen)} className="bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 flex items-center gap-2">
+            <span>{langs.find(l => l.c === current)?.f}</span>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+          {isOpen && (
+            <div className="absolute top-full right-0 mt-2 w-40 bg-slate-900 border border-slate-700 rounded-xl p-2 z-50">
+              {langs.map(l => (
+                <button key={l.c} onClick={() => { onChange(l.c); setIsOpen(false); }} className="w-full text-left p-2 hover:bg-slate-800 rounded-lg flex items-center gap-2">
+                  <span>{l.f}</span><span>{l.l}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // --- VIEWS ---
+    function AuthView({ onAuthSuccess, onCancel, lang }) {
+      const t = translations[lang];
+      const [isLogin, setIsLogin] = useState(true);
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [name, setName] = useState('');
+      const [error, setError] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const users = JSON.parse(localStorage.getItem('feud_users') || '[]');
+        if (isLogin) {
+          const user = users.find(u => u.email === email && u.password === password);
+          if (user) onAuthSuccess(user); else setError("Invalid login");
+        } else {
+          const newUser = { id: generateId(), name, email, password };
+          users.push(newUser);
+          localStorage.setItem('feud_users', JSON.stringify(users));
+          onAuthSuccess(newUser);
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6">
+          <div className="max-w-sm w-full space-y-8 bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+            <h1 className="text-4xl font-black game-font text-center uppercase italic">{isLogin ? t.hostLogin : t.registerHost}</h1>
+            {error && <div className="text-red-500 text-center text-sm">{error}</div>}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && <input type="text" placeholder={t.displayName} className="w-full p-4 bg-slate-950 rounded-xl" value={name} onChange={e => setName(e.target.value)} />}
+              <input type="email" placeholder={t.email} className="w-full p-4 bg-slate-950 rounded-xl" value={email} onChange={e => setEmail(e.target.value)} />
+              <input type="password" placeholder={t.password} className="w-full p-4 bg-slate-950 rounded-xl" value={password} onChange={e => setPassword(e.target.value)} />
+              <Button type="submit" className="w-full py-4 text-xl uppercase game-font">{isLogin ? t.enterDashboard : t.createAccount}</Button>
+            </form>
+            <button onClick={() => setIsLogin(!isLogin)} className="w-full text-blue-500 text-sm">{isLogin ? t.newHere : t.alreadyHost}</button>
+            <Button variant="ghost" onClick={onCancel} className="w-full">{t.backHome}</Button>
+          </div>
+        </div>
+      );
+    }
+
+    function JoinView({ onJoin, onCancel, lang }) {
+      const t = translations[lang];
+      const [code, setCode] = useState('');
+      const [name, setName] = useState('');
+      const [teamId, setTeamId] = useState('');
+      const [teams, setTeams] = useState([]);
+      const serviceRef = useRef(null);
+
+      useEffect(() => {
+        if (code.length === 6) {
+          const s = new MultiplayerService(code, (msg) => {
+            if (msg.type === 'GAME_UPDATE') {
+              if (msg.payload && msg.payload.teams) setTeams(msg.payload.teams);
+            }
+          });
+          serviceRef.current = s;
+          s.send({ type: 'REQUEST_SYNC' });
+          return () => s.close();
+        }
+      }, [code]);
+
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6">
+          <div className="max-w-sm w-full space-y-6 bg-slate-900 p-8 rounded-3xl border border-slate-800">
+            <h1 className="text-3xl font-black game-font text-center">{t.joinRoom}</h1>
+            <input type="text" maxLength={6} placeholder={t.roomCode} className="w-full p-4 bg-slate-950 text-center text-4xl font-black rounded-xl" value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} />
+            <input type="text" placeholder={t.yourName} className="w-full p-4 bg-slate-950 rounded-xl" value={name} onChange={e => setName(e.target.value)} />
+            {teams.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {teams.map(team => (
+                  <button key={team.id} onClick={() => setTeamId(team.id)} className={"p-4 rounded-xl border-4 transition-all " + (teamId === team.id ? "border-white scale-105" : "border-transparent opacity-60")} style={{ backgroundColor: team.color }}>
+                    <span className="font-bold text-white uppercase">{team.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <Button onClick={() => onJoin(code, name, teamId)} className="w-full py-4 uppercase game-font text-xl" disabled={!code || !name || !teamId}>{t.joinGame}</Button>
+            <Button variant="ghost" onClick={onCancel} className="w-full">{t.backHome}</Button>
+          </div>
+        </div>
+      );
+    }
+
+    function GameCreator({ onSave, onCancel, lang }) {
+      const t = translations[lang];
+      const [title, setTitle] = useState('');
+      const [topic, setTopic] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [questions, setQuestions] = useState([]);
+      const [teams, setTeams] = useState([{id:'t1', name:'Team 1', color:'#2563eb'}, {id:'t2', name:'Team 2', color:'#dc2626'}]);
+
+      const handleGenerate = async () => {
+        if (!topic) return;
+        setLoading(true);
+        try {
+          const game = await generateFeudGame(topic, lang);
+          setTitle(game.title);
+          setQuestions(game.questions);
+        } catch(e) { 
+          console.error(e);
+          alert("Error generating game."); 
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 p-6 space-y-8">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <Button variant="ghost" onClick={onCancel}><ChevronLeft /> Back</Button>
+            <h1 className="text-3xl font-black game-font uppercase italic">{t.boardEditor}</h1>
+            <Button onClick={() => onSave({id: generateId(), title, questions, teams, createdAt: Date.now()})} disabled={!title || !questions.length}>{t.saveGame}</Button>
+          </div>
+          <div className="max-w-4xl mx-auto bg-slate-900 p-8 rounded-3xl space-y-6">
+            <div className="flex gap-4">
+              <input type="text" placeholder={t.gameTheme} className="flex-1 p-4 bg-slate-950 rounded-xl" value={topic} onChange={e => setTopic(e.target.value)} />
+              <Button onClick={handleGenerate} disabled={loading}>{loading ? "..." : t.createButton}</Button>
+            </div>
+            <input type="text" placeholder="Game Title" className="w-full p-4 bg-slate-950 text-2xl font-bold rounded-xl" value={title} onChange={e => setTitle(e.target.value)} />
+            <div className="space-y-4">
+              {questions.map((q, i) => (
+                <div key={q.id} className="bg-slate-800 p-6 rounded-2xl space-y-4">
+                  <h3 className="font-bold">Round {i+1}: {q.prompt}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {q.answers.map(a => <div key={a.id} className="bg-slate-950 p-2 rounded text-sm flex justify-between"><span>{a.text}</span><span className="text-yellow-500">{a.points}</span></div>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function GameEngine({ game, onExit, lang }) {
+      const t = translations[lang];
+      const [state, setState] = useState({
+        idx: 0,
+        scores: {},
+        strikes: 0,
+        buzzed: null,
+        players: [],
+        roomCode: Math.floor(100000 + Math.random() * 900000).toString(),
+        revealed: []
+      });
+      const [view, setView] = useState('LOBBY');
+      const [animStrikes, setAnimStrikes] = useState(0);
+      const serviceRef = useRef(null);
+      
+      const currentQ = game.questions[state.idx];
+
+      const sync = useCallback(() => {
+        if (serviceRef.current && currentQ) {
+          serviceRef.current.send({
+            type: 'GAME_UPDATE',
+            payload: {
+              prompt: currentQ.prompt,
+              answers: currentQ.answers.map((a, i) => ({
+                index: i,
+                revealed: state.revealed.includes(a.id),
+                text: state.revealed.includes(a.id) ? a.text : undefined,
+                points: state.revealed.includes(a.id) ? a.points : undefined
+              })),
+              teams: game.teams,
+              teamScores: state.scores,
+              gameState: view,
+              buzzedPlayerId: state.buzzed,
+              strikes: state.strikes,
+              roundPoints: currentQ.answers.filter(a => state.revealed.includes(a.id)).reduce((s, a) => s + a.points, 0)
+            }
+          });
+        }
+      }, [currentQ, state, game.teams, view]);
+
+      useEffect(() => {
+        const s = new MultiplayerService(state.roomCode, (msg) => {
+          if (msg.type === 'REQUEST_SYNC') sync();
+          if (msg.type === 'JOIN') setState(p => ({...p, players: [...p.players, msg.payload]}));
+          if (msg.type === 'BUZZ') setState(p => p.buzzed ? p : ({...p, buzzed: msg.payload.playerId}));
+        });
+        serviceRef.current = s;
+        return () => s.close();
+      }, [state.roomCode, sync]);
+
+      useEffect(() => { sync(); }, [state, view, sync]);
+
+      const handleReveal = (a) => {
+        if (state.revealed.includes(a.id)) return;
+        setState(p => ({ ...p, revealed: [...p.revealed, a.id] }));
+      };
+
+      const handleStrike = () => {
+        const next = (state.strikes + 1);
+        if (next > 3) {
+           setState(p => ({ ...p, strikes: 0, buzzed: null }));
+           serviceRef.current?.send({ type: 'RESET_BUZZER' });
+           return;
+        }
+        setAnimStrikes(next);
+        setTimeout(() => setAnimStrikes(0), 1000);
+        setState(p => ({ ...p, strikes: next, buzzed: null }));
+        serviceRef.current?.send({ type: 'RESET_BUZZER' });
+      };
+
+      const handleScore = (teamId) => {
+        const roundPts = currentQ.answers.filter(a => state.revealed.includes(a.id)).reduce((s, a) => s + a.points, 0);
+        setState(p => ({
+          ...p,
+          scores: { ...p.scores, [teamId]: (p.scores[teamId] || 0) + roundPts }
+        }));
+      };
+
+      if (view === 'LOBBY') return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 space-y-12">
+          <div className="bg-white text-slate-900 p-12 rounded-[3rem] text-center shadow-2xl">
+            <p className="font-black uppercase tracking-widest text-sm mb-2">{t.roomCode}</p>
+            <h1 className="text-9xl font-black game-font">{state.roomCode}</h1>
+          </div>
+          <div className="flex gap-4">
+            {state.players.map(p => <div key={p.id} className="bg-slate-900 p-4 rounded-2xl flex flex-col items-center"><span>{p.emoji || '👤'}</span><span className="text-xs">{p.name}</span></div>)}
+          </div>
+          <Button size="lg" className="px-24 py-8 text-4xl game-font uppercase" onClick={() => setView('PLAY')}>Start</Button>
+          <Button variant="ghost" onClick={onExit}>{t.cancelSession}</Button>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen bg-slate-950 flex flex-col p-6">
+          <StrikeDisplay strikes={animStrikes} />
+          <div className="flex justify-center gap-6 mb-12">
+            {game.teams.map(team => (
+              <div key={team.id} onClick={() => handleScore(team.id)} className="bg-slate-900 border-b-8 p-6 rounded-3xl min-w-[150px] text-center cursor-pointer hover:scale-105 transition-all" style={{ borderBottomColor: team.color }}>
+                <p className="text-4xl font-black game-font">{state.scores[team.id] || 0}</p>
+                <p className="text-xs uppercase font-bold">{team.name}</p>
+              </div>
+            ))}
+          </div>
+          <div className="max-w-4xl mx-auto w-full space-y-8 flex-1">
+            <div className="bg-blue-900/40 p-12 rounded-3xl border-2 border-blue-500/30 text-center relative shadow-2xl">
+              <h2 className="text-4xl font-black italic">"{currentQ.prompt}"</h2>
+              {state.buzzed && (
+                <div className="absolute inset-0 bg-yellow-500/95 rounded-3xl flex flex-col items-center justify-center text-4xl font-black uppercase text-blue-900 animate-in zoom-in">
+                  <span className="text-6xl mb-2">BUZZ!</span>
+                  <span>{state.players.find(p => p.id === state.buzzed)?.name}</span>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(8)].map((_, i) => <AnswerTile key={i} index={i} answer={currentQ.answers[i]} onClick={() => handleReveal(currentQ.answers[i])} hostMode={true} />)}
+            </div>
+          </div>
+          <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-900 border-t border-slate-800 flex justify-center gap-6 shadow-2xl">
+            <Button variant="danger" className="h-16 px-12 text-2xl game-font" onClick={handleStrike}>{t.strike}</Button>
+            <Button className="h-16 px-12 text-2xl game-font" onClick={() => setState(p => ({ ...p, idx: (p.idx + 1) % game.questions.length, strikes: 0, revealed: [], buzzed: null }))}>{t.nextQuestion}</Button>
+            <Button variant="ghost" onClick={onExit}>Exit</Button>
+          </div>
+        </div>
+      );
+    }
+
+    function PlayerInterface({ roomCode, playerName, playerId, playerTeamId, onExit, lang }) {
+      const t = translations[lang];
+      const [sync, setSync] = useState(null);
+      const [status, setStatus] = useState('READY');
+      const serviceRef = useRef(null);
+
+      useEffect(() => {
+        const s = new MultiplayerService(roomCode, (msg) => {
+          if (msg.type === 'GAME_UPDATE') setSync(msg.payload);
+          if (msg.type === 'RESET_BUZZER') setStatus('READY');
+        });
+        serviceRef.current = s;
+        s.send({ type: 'JOIN', payload: { name: playerName, id: playerId, emoji: '👤', teamId: playerTeamId } });
+        return () => s.close();
+      }, [roomCode, playerId, playerName, playerTeamId]);
+
+      const handleBuzz = () => {
+        if (status !== 'READY') return;
+        setStatus('BUZZED');
+        if (serviceRef.current) serviceRef.current.send({ type: 'BUZZ', payload: { playerId } });
+      };
+
+      if (!sync) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-2xl animate-pulse">Connecting to Room {roomCode}...</div>;
+
+      return (
+        <div className="min-h-screen bg-slate-950 flex flex-col p-6 items-center">
+          <div className="w-full max-w-sm flex justify-between mb-8">
+             <div className="bg-slate-900 p-2 px-4 rounded-xl border border-slate-800">
+                <span className="text-xs text-slate-500 uppercase">Room</span>
+                <p className="font-bold">{roomCode}</p>
+             </div>
+             <Button variant="ghost" onClick={onExit} size="sm">Leave</Button>
+          </div>
+          <div className="bg-slate-900 p-8 rounded-[2.5rem] text-center w-full max-w-sm space-y-8 shadow-2xl border border-slate-800">
+            <h2 className="text-2xl font-black italic text-blue-400">"{sync.prompt}"</h2>
+            <div className="grid grid-cols-2 gap-2 opacity-50">
+              {[...Array(8)].map((_, i) => <AnswerTile key={i} index={i} answer={sync.answers[i]} />)}
+            </div>
+            <div className="flex justify-center py-4">
+              <button 
+                onClick={handleBuzz} 
+                disabled={status !== 'READY' || sync.buzzedPlayerId}
+                className={"w-48 h-48 rounded-full border-[12px] text-4xl font-black uppercase transition-all shadow-[0_20px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-4 " + 
+                  (status === 'READY' && !sync.buzzedPlayerId ? "bg-red-600 border-red-400 animate-buzzer-ready cursor-pointer" : "bg-slate-800 border-slate-700 opacity-50")}
+              >
+                {status === 'READY' ? (sync.buzzedPlayerId ? t.locked : t.buzz) : t.wait}
+              </button>
+            </div>
+            <div className="text-xs text-slate-600 font-bold uppercase tracking-widest">Buzz in when you know the answer!</div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MAIN APP ---
+    function App() {
+      const [view, setView] = useState('HOME');
+      const [user, setUser] = useState(null);
+      const [games, setGames] = useState([]);
+      const [selectedGame, setSelectedGame] = useState(null);
+      const [playerInfo, setPlayerInfo] = useState({ code: '', name: '', teamId: '', id: generateId() });
+      const [lang, setLang] = useState('en');
+      const t = translations[lang];
+
+      useEffect(() => {
+        const saved = localStorage.getItem('feud_games');
+        if (saved) setGames(JSON.parse(saved));
+        const savedUser = localStorage.getItem('feud_current_user');
+        if (savedUser) setUser(JSON.parse(savedUser));
+      }, []);
+
+      const saveGame = (g) => {
+        const updated = [...games, g];
+        setGames(updated);
+        localStorage.setItem('feud_games', JSON.stringify(updated));
+        setView('HOME');
+      };
+
+      const handleAuthSuccess = (u) => {
+        setUser(u);
+        localStorage.setItem('feud_current_user', JSON.stringify(u));
+        setView('HOME');
+      };
+
+      if (view === 'AUTH') return <AuthView lang={lang} onAuthSuccess={handleAuthSuccess} onCancel={() => setView('HOME')} />;
+      if (view === 'CREATE') return <GameCreator lang={lang} onSave={saveGame} onCancel={() => setView('HOME')} />;
+      if (view === 'JOIN') return <JoinView lang={lang} onJoin={(c, n, tId) => { setPlayerInfo(p => ({ ...p, code: c, name: n, teamId: tId })); setView('PLAYER_GAME'); }} onCancel={() => setView('HOME')} />;
+      if (view === 'PLAYER_GAME') return <PlayerInterface lang={lang} {...playerInfo} onExit={() => setView('HOME')} />;
+      if (view === 'PLAY' && selectedGame) return <GameEngine lang={lang} game={selectedGame} onExit={() => setView('HOME')} />;
+
+      return (
+        <div className="min-h-screen bg-slate-950 flex flex-col">
+          <header className="p-6 flex justify-between items-center bg-slate-900/50 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+            <h1 className="text-2xl font-black game-font italic uppercase text-blue-500 tracking-tighter">{t.appName}</h1>
+            <div className="flex gap-4 items-center">
+              <LanguagePicker current={lang} onChange={setLang} />
+              {user ? (
+                <div className="flex items-center gap-3">
+                   <span className="font-bold hidden md:inline">{user.name}</span>
+                   <button onClick={() => { setUser(null); localStorage.removeItem('feud_current_user'); }} className="text-slate-500 hover:text-white transition-colors"><LogOut className="w-5 h-5" /></button>
+                </div>
+              ) : (
+                <Button variant="ghost" onClick={() => setView('AUTH')}>{t.login}</Button>
+              )}
+            </div>
+          </header>
+          <main className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-12">
+            <div className="relative">
+               <div className="absolute -inset-4 bg-blue-600 rounded-full blur-[80px] opacity-20 animate-pulse"></div>
+               <h2 className="text-8xl md:text-[12rem] font-black game-font uppercase italic text-white leading-none drop-shadow-2xl relative z-10">{t.branding}</h2>
+            </div>
+            <div className="flex flex-wrap gap-8 justify-center relative z-10">
+              <Button size="lg" className="px-16 py-8 text-4xl game-font italic uppercase shadow-2xl border-b-8 border-blue-900" onClick={() => setView('JOIN')}>{t.joinAsPlayer}</Button>
+              <Button size="lg" variant="secondary" className="px-16 py-8 text-4xl game-font italic uppercase shadow-2xl border-b-8 border-slate-900" onClick={() => user ? setView('CREATE') : setView('AUTH')}>{t.createBoard}</Button>
+            </div>
+            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-12 relative z-10">
+              {games.length > 0 ? games.map(g => (
+                <div key={g.id} className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 cursor-pointer hover:border-blue-500 hover:bg-slate-800 transition-all hover:scale-105 shadow-xl text-left" onClick={() => { setSelectedGame(g); setView('PLAY'); }}>
+                  <div className="flex justify-between items-start mb-4">
+                     <h3 className="text-2xl font-bold uppercase game-font italic">{g.title}</h3>
+                     <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{g.questions.length} Rounds</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                     <div className="flex -space-x-2">
+                        {g.teams.map(t => <div key={t.id} className="w-6 h-6 rounded-full border-2 border-slate-900" style={{ backgroundColor: t.color }}></div>)}
+                     </div>
+                     <Play className="w-6 h-6 text-slate-700" />
+                  </div>
+                </div>
+              )) : (
+                <div className="col-span-full py-20 bg-slate-900/20 border-2 border-dashed border-slate-800 rounded-[3rem] opacity-30">
+                   <p className="font-bold uppercase tracking-widest italic">Create a board to get started</p>
+                </div>
+              )}
+            </div>
+          </main>
+          <footer className="p-8 text-slate-700 text-[10px] font-black uppercase tracking-widest text-center">
+             &copy; 2024 FEUD HOST &bull; Powered by Gemini AI
+          </footer>
+        </div>
+      );
+    }
+
+    const container = document.getElementById('root');
+    if (container) {
+      const root = createRoot(container);
+      root.render(<App />);
+    }
+  </script>
 </body>
 </html>
