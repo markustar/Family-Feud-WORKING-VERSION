@@ -22,7 +22,6 @@
     }
     .game-title { font-family: 'Outfit', sans-serif; }
     
-    /* Card Flip Animation */
     .card-wrap {
       height: 5.5rem;
       perspective: 1200px;
@@ -82,13 +81,14 @@
       justify-content: center;
       gap: 0.6rem;
     }
-    .btn:active { transform: scale(0.95); }
+    .btn:active:not(:disabled) { transform: scale(0.95); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
     .btn-primary { background: var(--accent); color: white; border: 1px solid rgba(255,255,255,0.1); }
-    .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 25px rgba(37, 99, 235, 0.5); }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); box-shadow: 0 0 25px rgba(37, 99, 235, 0.5); }
     .btn-secondary { background: #1e293b; color: white; border: 1px solid #334155; }
     .btn-danger { background: #ef4444; color: white; border: 1px solid rgba(255,255,255,0.1); }
     .btn-ghost { background: transparent; color: #94a3b8; }
-    .btn-ghost:hover { color: white; background: rgba(255,255,255,0.05); }
+    .btn-ghost:hover:not(:disabled) { color: white; background: rgba(255,255,255,0.05); }
     
     .glass {
       background: rgba(15, 23, 42, 0.8);
@@ -96,7 +96,6 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Buzzer Pulse */
     @keyframes buzz-pulse {
       0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); }
       50% { transform: scale(1.02); }
@@ -105,7 +104,6 @@
     }
     .buzzer-active { animation: buzz-pulse 2s infinite; }
 
-    /* Full Screen Strike Animation */
     @keyframes strike-in {
       0% { transform: scale(0) rotate(-20deg); opacity: 0; }
       40% { transform: scale(1.4) rotate(10deg); opacity: 1; }
@@ -142,7 +140,6 @@
       100% { background-position: 200% 0; }
     }
 
-    /* Custom Avatar Grid */
     .avatar-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -164,7 +161,6 @@
     .avatar-btn:hover { background: #334155; transform: scale(1.1); }
     .avatar-btn.selected { background: #2563eb; transform: scale(1.1); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
 
-    /* Podium Styles */
     .podium-container {
       display: flex;
       align-items: flex-end;
@@ -189,9 +185,8 @@
     }
     .podium-1 { background: linear-gradient(180deg, #fcd34d, #b45309); height: 100%; z-index: 10; border: 4px solid #fbbf24; }
     .podium-2 { background: linear-gradient(180deg, #e2e8f0, #475569); height: 75%; border: 4px solid #94a3b8; }
-    .podium-3 { background: linear-gradient(180deg, #f97316, #7c2d12); height: 50%; border: 4px solid #ea580c; }
+    .podium-3 { background: linear-gradient(180deg, #f97316, #7c2d12); height: 60%; border: 4px solid #ea580c; }
 
-    /* Confetti animation */
     @keyframes confetti-fall {
       0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
       100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
@@ -214,6 +209,11 @@
       100% { transform: translateY(0); opacity: 1; }
     }
 
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
   </style>
   <script type="importmap">
   {
@@ -235,11 +235,12 @@
     import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
     import { createRoot } from 'react-dom/client';
     import { 
-      Play, Shield, ChevronLeft, Zap, X, Plus, Save, Sparkles, Loader2, User, Users, LogOut, Edit3, CheckCircle2, ChevronRightCircle, Trophy, Medal, Star, ArrowLeft, Languages 
+      Play, Shield, ChevronLeft, Zap, X, Plus, Save, Sparkles, Loader2, User, Users, LogOut, Edit3, CheckCircle2, ChevronRightCircle, Trophy, Medal, Star, ArrowLeft, Languages, Trash2, Wand2, PlusCircle, Search
     } from 'lucide-react';
     import { GoogleGenAI, Type } from "@google/genai";
 
     const AVATARS = ["🦁", "🐯", "🦒", "🦊", "🐶", "🐱", "🐨", "🐸", "🐵", "🦄", "🐼", "🤖", "👻", "👾", "🦖", "🐧", "🐷", "🦋", "🍄", "🥑", "🐙", "🦀", "🚀", "🍕", "🍔"];
+    const TEAM_PALETTE = ['#2563eb', '#dc2626', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
     const genId = () => Math.random().toString(36).substr(2, 9);
 
     const TRANSLATIONS = {
@@ -280,7 +281,23 @@
         rounds: "Rounds",
         ultimate_console: "Ultimate Host Console",
         points: "PTS",
-        runner_up: "Runner Up"
+        runner_up: "Runner Up",
+        third_place: "3rd Place",
+        delete: "Delete",
+        save_board: "Save Board",
+        generate_ai: "AI Generate",
+        ai_theme: "Enter Theme (e.g. Travel, Movies)",
+        board_title: "Board Title",
+        team_name: "Team Name",
+        teams: "Teams",
+        add_team: "Add Team",
+        add_question: "Add Question",
+        question_prompt: "Question Prompt",
+        answer: "Answer",
+        pts: "Pts",
+        generating: "Generating board...",
+        save: "Save",
+        searching_room: "Searching for broadcast..."
       },
       ru: {
         app_title: "ФЬЮД ПРО",
@@ -319,7 +336,23 @@
         rounds: "Раундов",
         ultimate_console: "Панель ведущего",
         points: "ОЧК",
-        runner_up: "Второе место"
+        runner_up: "Второе место",
+        third_place: "Третье место",
+        delete: "Удалить",
+        save_board: "Сохранить",
+        generate_ai: "AI Генерация",
+        ai_theme: "Тема (напр. Кино, Еда)",
+        board_title: "Название игры",
+        team_name: "Имя Команды",
+        teams: "Команды",
+        add_team: "Новая команда",
+        add_question: "Новый вопрос",
+        question_prompt: "Текст вопроса",
+        answer: "Ответ",
+        pts: "Очки",
+        generating: "Генерация игры...",
+        save: "Сохранить",
+        searching_room: "Поиск трансляции..."
       }
     };
 
@@ -341,18 +374,6 @@
             { id: 'a4', text: { en: "Home Alone", ru: "Один дома" }, points: 12 },
             { id: 'a5', text: { en: "Toy Story", ru: "История игрушек" }, points: 8 },
             { id: 'a6', text: { en: "Jurassic Park", ru: "Парк Юрского периода" }, points: 5 }
-          ]
-        },
-        {
-          id: 'q2',
-          prompt: { en: "Something you find in a messy teenager's room", ru: "Что можно найти в грязной комнате подростка" },
-          answers: [
-            { id: 'a7', text: { en: "Clothes", ru: "Одежда" }, points: 50 },
-            { id: 'a8', text: { en: "Trash / Food", ru: "Мусор / Еда" }, points: 25 },
-            { id: 'a9', text: { en: "Electronics", ru: "Электроника" }, points: 10 },
-            { id: 'a10', text: { en: "Dirty Socks", ru: "Грязные носки" }, points: 8 },
-            { id: 'a11', text: { en: "Schoolwork", ru: "Домашнее задание" }, points: 4 },
-            { id: 'a12', text: { en: "Unmade Bed", ru: "Незастеленная кровать" }, points: 3 }
           ]
         }
       ]
@@ -383,7 +404,315 @@
       }
     }
 
-    const Confetti = () => {
+    const AvatarPicker = ({ selected, onSelect }) => (
+      <div className="avatar-grid max-w-md mx-auto">
+        {AVATARS.map(a => (
+          <button 
+            key={a} 
+            onClick={() => onSelect(a)} 
+            className={`avatar-btn ${selected === a ? 'selected' : ''}`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
+    );
+
+    const JoinView = ({ onJoin, onBack, t, lang }) => {
+      const [code, setCode] = useState('');
+      const [name, setName] = useState('');
+      const [avatar, setAvatar] = useState(AVATARS[0]);
+      const [teamId, setTeamId] = useState('');
+      const [roomData, setRoomData] = useState(null);
+      const syncRef = useRef(null);
+
+      useEffect(() => {
+        if (code.length === 6) {
+          syncRef.current = new SyncService(code, (msg) => {
+            if (msg.type === 'HEARTBEAT' || msg.type === 'SYNC') {
+               setRoomData(msg.payload);
+            }
+          });
+          syncRef.current.send('REQUEST_SYNC');
+          // Send request sync a few more times to ensure host catches it
+          const int = setInterval(() => { if (!roomData) syncRef.current?.send('REQUEST_SYNC'); }, 1000);
+          return () => { syncRef.current?.close(); clearInterval(int); };
+        } else setRoomData(null);
+      }, [code, roomData === null]);
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+          <div className="w-full max-w-4xl glass p-10 rounded-[2.5rem] shadow-2xl space-y-8 animate-in zoom-in duration-500 overflow-y-auto max-h-[90vh]">
+            <div className="text-center space-y-2">
+              <div className="inline-flex p-3 bg-blue-600/10 rounded-2xl text-blue-500 mb-2">
+                <Zap className="fill-current w-6 h-6" />
+              </div>
+              <h1 className="text-4xl font-black game-title tracking-tight uppercase">{t('ready_to_play')}</h1>
+              <p className="text-slate-500 text-sm">{t('join_desc')}</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('access_code')}</p>
+                   <input 
+                    type="text" maxLength={6} placeholder={t('room_code')} 
+                    className="w-full bg-slate-900/50 p-6 text-center text-4xl font-black rounded-2xl border-2 border-slate-800 focus:border-blue-500 outline-none tracking-widest transition-all" 
+                    value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} 
+                  />
+                </div>
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('display_name')}</p>
+                   <input 
+                    type="text" placeholder={t('display_name')} 
+                    className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 outline-none focus:border-blue-500 font-black uppercase text-sm tracking-widest text-center" 
+                    value={name} onChange={e => setName(e.target.value)} 
+                  />
+                </div>
+                
+                {code.length === 6 && !roomData && (
+                   <div className="flex flex-col items-center justify-center p-8 gap-3 text-blue-500/50 bg-slate-900/50 rounded-3xl border border-slate-800 animate-pulse">
+                      <Search className="w-6 h-6 animate-bounce" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('searching_room')}</span>
+                   </div>
+                )}
+
+                {roomData && (
+                  <div className="space-y-4 animate-in slide-in-from-top-4">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('choose_team')}</p>
+                    <div className="flex flex-wrap gap-4">
+                      {roomData.teams.map(tData => (
+                        <button 
+                          key={tData.id} 
+                          onClick={() => setTeamId(tData.id)} 
+                          className={`flex-1 min-w-[140px] p-4 rounded-2xl border-4 transition-all font-black text-[10px] uppercase tracking-widest relative overflow-hidden group ${teamId === tData.id ? 'border-white scale-105 shadow-[0_0_30px_rgba(255,255,255,0.2)]' : 'border-transparent opacity-40 hover:opacity-100'}`} 
+                          style={{background: tData.color}}
+                        >
+                          <span className="relative z-10">{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</span>
+                          {teamId === tData.id && <div className="absolute top-1 right-1"><CheckCircle2 className="w-4 h-4 text-white" /></div>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 text-center">{t('customize_avatar')}</p>
+                <AvatarPicker selected={avatar} onSelect={setAvatar} />
+              </div>
+            </div>
+
+            <div className="pt-6 grid grid-cols-2 gap-6">
+              <button onClick={onBack} className="btn btn-ghost py-6 text-lg uppercase tracking-widest rounded-2xl">{t('back')}</button>
+              <button 
+                onClick={() => onJoin(code, name, avatar, teamId)} 
+                disabled={!roomData || !name || !teamId} 
+                className="btn btn-primary py-6 text-xl tracking-tight uppercase shadow-xl rounded-2xl"
+              >
+                {t('enter_arena')}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const BoardCreator = ({ onSave, onBack, t, lang }) => {
+      const [title, setTitle] = useState({ en: '', ru: '' });
+      const [teams, setTeams] = useState([
+        { id: 't1', name: { en: 'TEAM ALPHA', ru: 'КОМАНДА АЛЬФА' }, color: '#2563eb' },
+        { id: 't2', name: { en: 'TEAM OMEGA', ru: 'КОМАНДА ОМЕГА' }, color: '#dc2626' }
+      ]);
+      const [questions, setQuestions] = useState([]);
+      const [isGenerating, setIsGenerating] = useState(false);
+      const [aiTheme, setAiTheme] = useState('');
+
+      const generateAI = async () => {
+        if (!aiTheme) return;
+        setIsGenerating(true);
+        try {
+          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+          const prompt = `Generate a Family Feud game board about "${aiTheme}". 
+          Return ONLY JSON in this format:
+          {
+            "title": { "en": "English Title", "ru": "Russian Title" },
+            "questions": [
+              {
+                "prompt": { "en": "Question in English", "ru": "Question in Russian" },
+                "answers": [
+                  { "text": { "en": "Ans 1", "ru": "Ans 1 ru" }, "points": 40 },
+                  ... usually 4-8 answers
+                ]
+              },
+              ... total 5-8 questions
+            ]
+          }
+          Make questions diverse and answers realistic.`;
+          
+          const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: { responseMimeType: "application/json" }
+          });
+          
+          const data = JSON.parse(response.text);
+          setTitle(data.title);
+          setQuestions(data.questions.map(q => ({ ...q, id: genId(), answers: q.answers.map(a => ({ ...a, id: genId() })) })));
+        } catch (e) {
+          console.error(e);
+          alert("AI Generation failed.");
+        } finally {
+          setIsGenerating(false);
+        }
+      };
+
+      const addEmptyQuestion = () => {
+        setQuestions([...questions, {
+          id: genId(),
+          prompt: { en: '', ru: '' },
+          answers: [{ id: genId(), text: { en: '', ru: '' }, points: 0 }]
+        }]);
+      };
+
+      const addTeam = () => {
+        const nextColor = TEAM_PALETTE[teams.length % TEAM_PALETTE.length];
+        setTeams([...teams, { 
+          id: genId(), 
+          name: { en: `TEAM ${teams.length + 1}`, ru: `КОМАНДА ${teams.length + 1}` }, 
+          color: nextColor 
+        }]);
+      };
+
+      const updateTeam = (tid, field, value) => {
+        setTeams(teams.map(tm => tm.id === tid ? { ...tm, [field]: value } : tm));
+      };
+
+      const updateQuestion = (qid, field, value) => {
+        setQuestions(questions.map(q => q.id === qid ? { ...q, [field]: value } : q));
+      };
+
+      const handleSave = () => {
+        const board = {
+          id: genId(),
+          title,
+          teams,
+          questions
+        };
+        onSave(board);
+      };
+
+      return (
+        <div className="min-h-screen p-12 bg-slate-950 overflow-y-auto">
+          <div className="max-w-4xl mx-auto space-y-12 pb-32">
+            <header className="flex justify-between items-center">
+              <button onClick={onBack} className="btn btn-secondary px-8"><ArrowLeft className="w-5 h-5" /> {t('back')}</button>
+              <h2 className="text-4xl font-black game-title tracking-tighter uppercase">{t('create_board')}</h2>
+              <button onClick={handleSave} className="btn btn-primary px-10 py-4 text-lg"><Save className="w-5 h-5" /> {t('save_board')}</button>
+            </header>
+
+            <div className="glass p-10 rounded-[3rem] space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('board_title')} (EN)</p>
+                    <input type="text" className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 outline-none focus:border-blue-500" value={title.en} onChange={e => setTitle({...title, en: e.target.value})} />
+                 </div>
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('board_title')} (RU)</p>
+                    <input type="text" className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 outline-none focus:border-blue-500" value={title.ru} onChange={e => setTitle({...title, ru: e.target.value})} />
+                 </div>
+              </div>
+            </div>
+
+            <div className="glass p-10 rounded-[3rem] space-y-8">
+              <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                 <h3 className="text-xl font-bold uppercase tracking-widest">{t('teams')}</h3>
+                 <Users className="text-blue-500" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {teams.map((tm, idx) => (
+                  <div key={tm.id} className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4 relative group">
+                    {teams.length > 2 && (
+                      <button onClick={() => setTeams(teams.filter(tItem => tItem.id !== tm.id))} className="absolute top-4 right-4 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <div className="flex items-center gap-4">
+                       <input type="color" value={tm.color} onChange={e => updateTeam(tm.id, 'color', e.target.value)} className="w-10 h-10 rounded-lg bg-transparent border-none cursor-pointer" />
+                       <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('team_name')} {idx + 1}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <input placeholder="EN Name" className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-sm" value={tm.name.en} onChange={e => updateTeam(tm.id, 'name', {...tm.name, en: e.target.value})} />
+                      <input placeholder="RU Name" className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-sm" value={tm.name.ru} onChange={e => updateTeam(tm.id, 'name', {...tm.name, ru: e.target.value})} />
+                    </div>
+                  </div>
+                ))}
+                <button onClick={addTeam} className="border-4 border-dashed border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center gap-3 text-slate-500 hover:border-blue-500 hover:text-blue-500 transition-all">
+                   <PlusCircle className="w-8 h-8" />
+                   <span className="font-black uppercase text-xs tracking-widest">{t('add_team')}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="glass p-10 rounded-[3rem] space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold uppercase tracking-widest">{t('generate_ai')}</h3>
+                <Wand2 className="text-blue-500" />
+              </div>
+              <div className="flex gap-4">
+                <input type="text" placeholder={t('ai_theme')} className="flex-1 bg-slate-900/50 p-4 rounded-xl border border-slate-800 outline-none focus:border-blue-500" value={aiTheme} onChange={e => setAiTheme(e.target.value)} />
+                <button onClick={generateAI} disabled={isGenerating} className="btn btn-primary px-8">
+                  {isGenerating ? <Loader2 className="animate-spin" /> : t('generate_ai')}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {questions.map((q, qIdx) => (
+                <div key={q.id} className="glass p-8 rounded-[2.5rem] space-y-6 relative border-l-8 border-blue-500">
+                  <button onClick={() => setQuestions(questions.filter(qu => qu.id !== q.id))} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-red-500"><X /></button>
+                  <div className="grid grid-cols-1 gap-4">
+                    <input placeholder={`${t('question_prompt')} (EN)`} className="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-800 font-bold" value={q.prompt.en} onChange={e => updateQuestion(q.id, 'prompt', {...q.prompt, en: e.target.value})} />
+                    <input placeholder={`${t('question_prompt')} (RU)`} className="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-800 font-bold" value={q.prompt.ru} onChange={e => updateQuestion(q.id, 'prompt', {...q.prompt, ru: e.target.value})} />
+                  </div>
+                  <div className="space-y-3">
+                    {q.answers.map((ans, aIdx) => (
+                      <div key={ans.id} className="grid grid-cols-[1fr_1fr_80px_40px] gap-3 items-center">
+                        <input placeholder={t('answer')} className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-sm" value={ans.text.en} onChange={e => {
+                          const newAns = q.answers.map(a => a.id === ans.id ? {...a, text: {...a.text, en: e.target.value}} : a);
+                          updateQuestion(q.id, 'answers', newAns);
+                        }} />
+                        <input placeholder={t('answer')} className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-sm" value={ans.text.ru} onChange={e => {
+                          const newAns = q.answers.map(a => a.id === ans.id ? {...a, text: {...a.text, ru: e.target.value}} : a);
+                          updateQuestion(q.id, 'answers', newAns);
+                        }} />
+                        <input type="number" placeholder={t('pts')} className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-sm text-center" value={ans.points} onChange={e => {
+                          const newAns = q.answers.map(a => a.id === ans.id ? {...a, points: parseInt(e.target.value) || 0} : a);
+                          updateQuestion(q.id, 'answers', newAns);
+                        }} />
+                        <button onClick={() => {
+                          const newAns = q.answers.filter(a => a.id !== ans.id);
+                          updateQuestion(q.id, 'answers', newAns);
+                        }} className="text-slate-600 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    ))}
+                    <button onClick={() => {
+                      const newAns = [...q.answers, { id: genId(), text: { en: '', ru: '' }, points: 0 }];
+                      updateQuestion(q.id, 'answers', newAns);
+                    }} className="text-xs font-bold text-blue-500 flex items-center gap-1"><PlusCircle className="w-3 h-3" /> {t('add_question')}</button>
+                  </div>
+                </div>
+              ))}
+              <button onClick={addEmptyQuestion} className="w-full py-10 rounded-[3rem] border-4 border-dashed border-slate-800 hover:border-blue-500 hover:bg-blue-500/5 transition-all flex flex-col items-center gap-2 text-slate-500 hover:text-blue-500 font-black">
+                <Plus className="w-10 h-10" />
+                {t('add_question').toUpperCase()}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ConfettiComponent = () => {
       const pieces = useMemo(() => [...Array(50)].map((_, i) => ({
         id: i,
         left: Math.random() * 100,
@@ -408,21 +737,7 @@
       );
     };
 
-    const AvatarPicker = ({ selected, onSelect }) => (
-      <div className="avatar-grid max-w-md mx-auto">
-        {AVATARS.map(a => (
-          <button 
-            key={a} 
-            onClick={() => onSelect(a)} 
-            className={`avatar-btn ${selected === a ? 'selected' : ''}`}
-          >
-            {a}
-          </button>
-        ))}
-      </div>
-    );
-
-    const AnswerTile = ({ answer, index, onClick, isHost, t, lang }) => {
+    const AnswerTileComponent = ({ answer, index, onClick, isHost, t, lang }) => {
       if (!answer) return <div className="h-24 rounded-2xl bg-slate-900/30 border border-slate-800 border-dashed"></div>;
       const isRevealed = answer.revealed;
       const text = typeof answer.text === 'object' ? answer.text[lang] : answer.text;
@@ -450,81 +765,6 @@
         </div>
       );
     };
-
-    function JoinView({ onJoin, onBack, t, lang }) {
-      const [code, setCode] = useState('');
-      const [name, setName] = useState('');
-      const [avatar, setAvatar] = useState(AVATARS[0]);
-      const [teamId, setTeamId] = useState('');
-      const [roomData, setRoomData] = useState(null);
-      const syncRef = useRef(null);
-
-      useEffect(() => {
-        if (code.length === 6) {
-          syncRef.current = new SyncService(code, (msg) => {
-            if (msg.type === 'HEARTBEAT' || msg.type === 'SYNC') setRoomData(msg.payload);
-          });
-          syncRef.current.send('REQUEST_SYNC');
-          return () => syncRef.current?.close();
-        } else setRoomData(null);
-      }, [code]);
-
-      return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
-          <div className="w-full max-w-4xl glass p-10 rounded-[2.5rem] shadow-2xl space-y-8 animate-in zoom-in duration-500">
-            <div className="text-center space-y-2">
-              <div className="inline-flex p-3 bg-blue-600/10 rounded-2xl text-blue-500 mb-2">
-                <Zap className="fill-current w-6 h-6" />
-              </div>
-              <h1 className="text-4xl font-black game-title tracking-tight uppercase">{t('ready_to_play')}</h1>
-              <p className="text-slate-500 text-sm">{t('join_desc')}</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('access_code')}</p>
-                   <input 
-                    type="text" maxLength={6} placeholder={t('room_code')} 
-                    className="w-full bg-slate-900/50 p-6 text-center text-4xl font-black rounded-2xl border-2 border-slate-800 focus:border-blue-500 outline-none tracking-widest transition-all" 
-                    value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} 
-                  />
-                </div>
-                <div className="space-y-2">
-                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('display_name')}</p>
-                   <input 
-                    type="text" placeholder={t('display_name')} 
-                    className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 outline-none focus:border-blue-500 font-black uppercase text-sm tracking-widest text-center" 
-                    value={name} onChange={e => setName(e.target.value)} 
-                  />
-                </div>
-                {roomData && (
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">{t('choose_team')}</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      {roomData.teams.map(tData => (
-                        <button key={tData.id} onClick={() => setTeamId(tData.id)} className={`p-5 rounded-2xl border-2 transition-all font-black text-xs uppercase tracking-widest ${teamId === tData.id ? 'border-white scale-105 shadow-xl' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{background: tData.color}}>
-                          {typeof tData.name === 'object' ? tData.name[lang] : tData.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 text-center">{t('customize_avatar')}</p>
-                <AvatarPicker selected={avatar} onSelect={setAvatar} />
-              </div>
-            </div>
-
-            <div className="pt-6 grid grid-cols-2 gap-6">
-              <button onClick={onBack} className="btn btn-ghost py-6 text-lg uppercase tracking-widest rounded-2xl">{t('back')}</button>
-              <button onClick={() => onJoin(code, name, avatar, teamId)} disabled={!roomData || !name || !teamId} className="btn btn-primary py-6 text-xl tracking-tight uppercase shadow-xl rounded-2xl">{t('enter_arena')}</button>
-            </div>
-          </div>
-        </div>
-      );
-    }
 
     function GameEngine({ board, onExit, t, lang }) {
       const [state, setState] = useState({
@@ -623,18 +863,33 @@
 
       if (state.gameStatus === 'PODIUM') {
         const sortedTeams = [...board.teams].sort((a, b) => (state.scores[b.id] || 0) - (state.scores[a.id] || 0));
-        
         return (
           <div className="min-h-screen flex flex-col items-center justify-center p-12 bg-slate-950 overflow-hidden relative">
-            <Confetti />
+            <ConfettiComponent />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)] opacity-30"></div>
-            
             <div className="text-center z-10 space-y-4 animate-in fade-in duration-1000">
                <h1 className="text-8xl font-black game-title tracking-tighter italic text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">{t('victory')}</h1>
                <p className="text-blue-400 uppercase tracking-[1em] font-black text-sm">{t('tournament_results')}</p>
             </div>
-            
             <div className="podium-container z-10">
+               {sortedTeams[2] && (
+                 <div className="podium-place podium-3 animate-in slide-in-from-bottom-20 duration-1000 delay-400">
+                    <div className="absolute -top-32 flex flex-col items-center space-y-2">
+                       <div className="flex -space-x-4">
+                          {state.players.filter(p => p.teamId === sortedTeams[2].id).map((p, idx) => (
+                             <div key={p.id} className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl border-4 border-slate-700 shadow-2xl floating-player" style={{animationDelay: `${idx * 200}ms`}}>
+                                {p.avatar}
+                                <span className="absolute -bottom-8 whitespace-nowrap text-[8px] font-bold text-slate-400 uppercase">{p.name}</span>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                    <Medal className="w-12 h-12 text-amber-700 mb-4" />
+                    <span className="text-2xl font-black text-slate-100 mb-1 truncate px-4 text-center">{sortedTeams[2].name[lang]}</span>
+                    <span className="text-4xl font-black text-white">{state.scores[sortedTeams[2].id] || 0}</span>
+                    <span className="absolute bottom-4 uppercase font-black tracking-widest text-slate-400 text-[8px]">{t('third_place')}</span>
+                 </div>
+               )}
                {sortedTeams[1] && (
                  <div className="podium-place podium-2 animate-in slide-in-from-bottom-20 duration-1000 delay-200">
                     <div className="absolute -top-40 flex flex-col items-center space-y-2">
@@ -648,12 +903,11 @@
                        </div>
                     </div>
                     <Medal className="w-16 h-16 text-slate-300 mb-4" />
-                    <span className="text-3xl font-black text-slate-100 mb-1">{sortedTeams[1].name[lang]}</span>
+                    <span className="text-3xl font-black text-slate-100 mb-1 truncate px-4 text-center">{sortedTeams[1].name[lang]}</span>
                     <span className="text-5xl font-black text-white">{state.scores[sortedTeams[1].id] || 0}</span>
                     <span className="absolute bottom-4 uppercase font-black tracking-widest text-slate-400 text-[10px]">{t('runner_up')}</span>
                  </div>
                )}
-
                {sortedTeams[0] && (
                  <div className="podium-place podium-1 animate-in slide-in-from-bottom-20 duration-700">
                     <div className="absolute -top-48 flex flex-col items-center space-y-4">
@@ -667,7 +921,7 @@
                        </div>
                     </div>
                     <Trophy className="w-24 h-24 text-amber-200 mb-6 drop-shadow-[0_0_30px_rgba(252,211,77,0.8)] animate-bounce" />
-                    <span className="text-4xl font-black text-amber-50 mb-2">{sortedTeams[0].name[lang]}</span>
+                    <span className="text-4xl font-black text-amber-50 mb-2 truncate px-4 text-center">{sortedTeams[0].name[lang]}</span>
                     <span className="text-7xl font-black text-white mb-4">{state.scores[sortedTeams[0].id] || 0}</span>
                     <div className="bg-amber-900/60 px-8 py-3 rounded-full border-2 border-amber-400 shadow-2xl">
                        <span className="uppercase font-black tracking-[0.4em] text-amber-200 text-sm">{t('champions')}</span>
@@ -675,7 +929,6 @@
                  </div>
                )}
             </div>
-
             <div className="mt-24 z-10 flex gap-8">
                <button onClick={onExit} className="btn bg-white text-slate-950 px-16 py-6 text-xl rounded-3xl shadow-[0_20px_40px_rgba(255,255,255,0.2)] hover:scale-105 transition-all flex items-center gap-4">
                   <ArrowLeft className="w-6 h-6" /> {t('return_to_menu')}
@@ -696,14 +949,14 @@
                <div className="absolute -top-4 -right-4 bg-blue-600 text-white p-4 rounded-full shadow-2xl"><Users className="w-8 h-8" /></div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-10 w-full max-w-6xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 w-full max-w-7xl">
             {board.teams.map(tData => (
               <div key={tData.id} className="glass p-10 rounded-[3rem] border-t-8 space-y-6" style={{borderColor: tData.color}}>
                 <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                  <h3 className="text-2xl font-black uppercase" style={{color: tData.color}}>{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</h3>
-                  <span className="text-xs font-bold text-slate-500 uppercase">{state.players.filter(p => p.teamId === tData.id).length} Connected</span>
+                  <h3 className="text-xl font-black uppercase truncate pr-2" style={{color: tData.color}}>{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</h3>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">{state.players.filter(p => p.teamId === tData.id).length} Connected</span>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {state.players.filter(p => p.teamId === tData.id).map(p => (
                     <div key={p.id} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800 flex items-center gap-4 animate-in fade-in zoom-in">
                       <span className="text-3xl">{p.avatar}</span>
@@ -734,21 +987,18 @@
                </div>
             </div>
           )}
-
-          <div className="flex justify-between items-center max-w-7xl mx-auto w-full">
+          <div className="flex flex-wrap justify-center items-center max-w-7xl mx-auto w-full gap-6">
              {board.teams.map(tData => (
-                <div key={tData.id} className="glass p-10 rounded-[2.5rem] border-b-[12px] min-w-[320px] text-center shadow-2xl relative" style={{borderBottomColor: tData.color}}>
-                   <p className="text-8xl font-black mb-2 leading-none">{state.scores[tData.id] || 0}</p>
-                   <p className="text-xs font-black uppercase text-slate-500 tracking-[0.4em]">{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</p>
+                <div key={tData.id} className="glass p-6 rounded-[2.5rem] border-b-8 min-w-[200px] text-center shadow-2xl relative" style={{borderBottomColor: tData.color}}>
+                   <p className="text-6xl font-black mb-1 leading-none">{state.scores[tData.id] || 0}</p>
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] truncate px-2">{typeof tData.name === 'object' ? tData.name[lang] : tData.name}</p>
                 </div>
              ))}
           </div>
-
           <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col space-y-8 relative">
             <div className="glass p-16 rounded-[4rem] text-center relative border-2 border-white/5 shadow-2xl overflow-hidden">
                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)]"></div>
                <h2 className="text-5xl font-black italic drop-shadow-2xl leading-tight tracking-tight text-white relative">"{currentPrompt}"</h2>
-               
                {state.buzzedId && (
                   <div className="absolute inset-0 bg-amber-400 flex flex-col items-center justify-center animate-in zoom-in duration-300 rounded-[4rem] z-50">
                      <h3 className="text-9xl font-black text-amber-950 uppercase italic mb-8 tracking-tighter">BUZZ!</h3>
@@ -759,15 +1009,13 @@
                      <button onClick={() => setState(s => ({...s, buzzedId: null}))} className="mt-10 bg-amber-950 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:scale-105 transition-all">{t('clear_buzzer')}</button>
                   </div>
                )}
-
                <div className="absolute top-8 right-12 flex gap-4">
                   {[...Array(state.strikes)].map((_, i) => <X key={i} className="text-red-600 w-16 h-16 fill-current animate-in zoom-in" strokeWidth={5} />)}
                </div>
             </div>
-
             <div className="grid grid-cols-2 gap-6">
                {[...Array(8)].map((_, i) => (
-                  <AnswerTile 
+                  <AnswerTileComponent 
                     key={i} 
                     index={i} 
                     answer={currentQ.answers[i] ? {...currentQ.answers[i], revealed: state.revealedIds.includes(currentQ.answers[i].id)} : null} 
@@ -779,7 +1027,6 @@
                ))}
             </div>
           </div>
-
           <div className="fixed bottom-10 right-10 flex gap-6 glass p-6 rounded-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] z-[60]">
              <button onClick={onStrike} className="btn btn-danger w-48 py-5 text-lg uppercase tracking-widest shadow-xl">{t('strike')}</button>
              <button onClick={onNext} className="btn btn-primary w-72 py-5 text-lg flex items-center gap-3 uppercase tracking-tighter shadow-xl">
@@ -791,12 +1038,13 @@
       );
     }
 
-    function PlayerInterface({ code, name, avatar, id, teamId, onExit, t, lang }) {
+    function PlayerInterface({ code, name: initialName, avatar: initialAvatar, id, teamId, onExit, onUpdate, t, lang }) {
       const [sync, setSync] = useState(null);
       const [status, setStatus] = useState('READY');
       const [isEditing, setIsEditing] = useState(false);
-      const [editName, setEditName] = useState(name);
-      const [editAvatar, setEditAvatar] = useState(avatar);
+      const [editName, setEditName] = useState(initialName);
+      const [editAvatar, setEditAvatar] = useState(initialAvatar);
+      
       const syncRef = useRef(null);
 
       useEffect(() => {
@@ -804,7 +1052,7 @@
           if (msg.type === 'SYNC') setSync(msg.payload);
           if (msg.type === 'HEARTBEAT') setSync(prev => prev ? {...prev, ...msg.payload} : msg.payload);
         });
-        syncRef.current.send('JOIN', { name, avatar, id, teamId });
+        syncRef.current.send('JOIN', { name: initialName, avatar: initialAvatar, id, teamId });
         syncRef.current.send('REQUEST_SYNC');
         return () => syncRef.current?.close();
       }, [code, id, teamId]);
@@ -817,6 +1065,7 @@
       };
 
       const handleUpdateProfile = () => {
+        onUpdate({ name: editName, avatar: editAvatar });
         syncRef.current.send('UPDATE_PROFILE', { id, name: editName, avatar: editAvatar });
         setIsEditing(false);
       };
@@ -839,34 +1088,26 @@
           <div className="w-full max-w-md glass p-6 rounded-[2.5rem] flex justify-between items-center shadow-2xl border-white/5">
              <div className="flex items-center gap-5">
                 <div className="relative">
-                  <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-5xl shadow-inner">{isEditing ? editAvatar : avatar}</div>
+                  <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-5xl shadow-inner">{initialAvatar}</div>
                   <button onClick={() => setIsEditing(!isEditing)} className="absolute -bottom-2 -right-2 bg-blue-600 p-2 rounded-xl border-4 border-slate-950 shadow-xl transition-transform hover:scale-110"><Edit3 className="w-3 h-3 text-white" /></button>
                 </div>
                 <div className="leading-tight">
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Broadcast {code}</p>
-                   <p className="font-black text-xl uppercase tracking-tight text-white">{isEditing ? editName : name}</p>
+                   <p className="font-black text-xl uppercase tracking-tight text-white">{initialName}</p>
                 </div>
              </div>
              <button onClick={onExit} className="btn btn-secondary p-5 rounded-2xl border-white/5"><LogOut className="w-5 h-5" /></button>
           </div>
-
           {isEditing && (
             <div className="w-full max-w-2xl glass p-10 rounded-[3rem] space-y-8 animate-in slide-in-from-top-6 z-[100] border-blue-500/20 shadow-4xl">
                <div className="space-y-4">
                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] ml-2 text-center">{t('customize_avatar')}</p>
-                  <AvatarPicker selected={editAvatar} onSelect={setEditAvatar} />
-                  <input 
-                    type="text" 
-                    className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 font-black uppercase text-center tracking-widest outline-none focus:border-blue-500 transition-all" 
-                    value={editName} 
-                    onChange={e => setEditName(e.target.value)} 
-                    placeholder={t('display_name')}
-                  />
+                  <AvatarPicker selected={editAvatar} onSelect={setAvatar => setEditAvatar(setAvatar)} />
+                  <input type="text" className="w-full bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-800 font-black uppercase text-center tracking-widest outline-none focus:border-blue-500 transition-all" value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('display_name')} />
                </div>
-               <button onClick={handleUpdateProfile} className="btn btn-primary w-full py-5 text-xl tracking-tight shadow-xl uppercase rounded-2xl">Save</button>
+               <button onClick={handleUpdateProfile} className="btn btn-primary w-full py-5 text-xl tracking-tight shadow-xl uppercase rounded-2xl">{t('save')}</button>
             </div>
           )}
-
           <div className="w-full max-w-2xl glass rounded-[4.5rem] p-12 text-center space-y-12 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.8)] flex-1 flex flex-col justify-center relative overflow-hidden border-white/5">
              {sync.gameStatus === 'LOBBY' ? (
                 <div className="py-24 space-y-10">
@@ -886,17 +1127,8 @@
                     <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] animate-pulse">{t('live_topic')}</p>
                     <h2 className="text-5xl font-black italic text-blue-50 leading-tight drop-shadow-lg">"{currentPrompt}"</h2>
                   </div>
-
                   <div className="flex justify-center relative">
-                     <button 
-                        onClick={onBuzz}
-                        disabled={sync.gameStatus !== 'PLAYING' || (sync.buzzedId && sync.buzzedId !== id)}
-                        className={`w-80 h-80 rounded-full border-[24px] text-7xl font-black transition-all shadow-[0_0_120px_rgba(0,0,0,0.6)] relative z-20 ${
-                           sync.buzzedId === id ? 'bg-amber-500 border-amber-300 text-amber-950 scale-110 rotate-3' : 
-                           sync.gameStatus === 'PLAYING' && !sync.buzzedId ? 'bg-red-600 border-red-500 buzzer-active active:scale-90 hover:scale-[1.02]' : 
-                           'bg-slate-900 border-slate-800 opacity-20 grayscale cursor-not-allowed'
-                        }`}
-                     >
+                     <button onClick={onBuzz} disabled={sync.gameStatus !== 'PLAYING' || (sync.buzzedId && sync.buzzedId !== id)} className={`w-80 h-80 rounded-full border-[24px] text-7xl font-black transition-all shadow-[0_0_120px_rgba(0,0,0,0.6)] relative z-20 ${sync.buzzedId === id ? 'bg-amber-500 border-amber-300 text-amber-950 scale-110 rotate-3' : sync.gameStatus === 'PLAYING' && !sync.buzzedId ? 'bg-red-600 border-red-500 buzzer-active active:scale-90 hover:scale-[1.02]' : 'bg-slate-900 border-slate-800 opacity-20 grayscale cursor-not-allowed'}`}>
                         <span className="drop-shadow-2xl">{sync.buzzedId === id ? t('mine') : sync.buzzedId ? t('wait') : t('buzz')}</span>
                      </button>
                   </div>
@@ -919,10 +1151,27 @@
         setBoards(saved ? JSON.parse(saved) : [MOCK_BOARD]);
       }, []);
 
+      const saveBoard = (newBoard) => {
+        const updated = [newBoard, ...boards];
+        setBoards(updated);
+        localStorage.setItem('feud_v3_boards', JSON.stringify(updated));
+        setView('HOME');
+      };
+
+      const deleteBoard = (id) => {
+        if (!confirm("Are you sure?")) return;
+        const updated = boards.filter(b => b.id !== id);
+        setBoards(updated);
+        localStorage.setItem('feud_v3_boards', JSON.stringify(updated));
+      };
+
+      const updatePInfo = (updates) => setPInfo(prev => ({...prev, ...updates}));
+
       const t = (key) => TRANSLATIONS[lang][key] || key;
 
+      if (view === 'CREATOR') return <BoardCreator t={t} lang={lang} onBack={() => setView('HOME')} onSave={saveBoard} />;
       if (view === 'JOIN') return <JoinView t={t} lang={lang} onBack={() => setView('HOME')} onJoin={(c, n, a, tid) => { setPInfo({ code: c, name: n, avatar: a, teamId: tid, id: genId() }); setView('PLAYER'); }} />;
-      if (view === 'PLAYER') return <PlayerInterface t={t} lang={lang} {...pInfo} onExit={() => setView('HOME')} />;
+      if (view === 'PLAYER') return <PlayerInterface t={t} lang={lang} {...pInfo} onUpdate={updatePInfo} onExit={() => setView('HOME')} />;
       if (view === 'PLAY') return <GameEngine t={t} lang={lang} board={activeBoard} onExit={() => setView('HOME')} />;
 
       return (
@@ -933,15 +1182,12 @@
                 <h1 className="text-3xl font-black game-title tracking-tighter italic">FEUD PRO</h1>
              </div>
              <div className="flex gap-4 items-center">
-                <button 
-                  onClick={() => setLang(l => l === 'en' ? 'ru' : 'en')}
-                  className="btn btn-ghost p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all flex items-center gap-2"
-                >
+                <button onClick={() => setLang(l => l === 'en' ? 'ru' : 'en')} className="btn btn-ghost p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all flex items-center gap-2">
                   <Languages className="w-5 h-5" />
                   <span className="uppercase font-black text-xs">{lang === 'en' ? 'RU' : 'EN'}</span>
                 </button>
                 <button onClick={() => setView('JOIN')} className="btn btn-secondary px-10 py-4 rounded-2xl border-white/5 hover:border-white/10 transition-all font-black text-xs uppercase tracking-widest">{t('join_broadcast')}</button>
-                <button onClick={() => alert("Board building is active. Select an existing one below!")} className="btn btn-primary px-10 py-4 rounded-2xl shadow-xl transition-all hover:scale-105 font-black text-xs uppercase tracking-widest"><Plus className="w-4 h-4" /> {t('create_board')}</button>
+                <button onClick={() => setView('CREATOR')} className="btn btn-primary px-10 py-4 rounded-2xl shadow-xl transition-all hover:scale-105 font-black text-xs uppercase tracking-widest"><Plus className="w-4 h-4" /> {t('create_board')}</button>
              </div>
           </header>
 
@@ -958,13 +1204,16 @@
 
              <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 z-10">
                 {boards.map(b => (
-                   <div key={b.id} className="glass p-12 rounded-[4rem] cursor-pointer hover:border-blue-500/50 transition-all hover:scale-[1.05] group shadow-[0_40px_100px_-30px_rgba(0,0,0,1)] relative overflow-hidden" onClick={() => { setActiveBoard(b); setView('PLAY'); }}>
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="flex justify-between items-start mb-12 relative z-10">
+                   <div key={b.id} className="glass p-12 rounded-[4rem] cursor-pointer hover:border-blue-500/50 transition-all hover:scale-[1.05] group shadow-[0_40px_100px_-30px_rgba(0,0,0,1)] relative overflow-hidden">
+                      <div className="absolute top-4 right-4 z-20" onClick={(e) => { e.stopPropagation(); deleteBoard(b.id); }}>
+                         <button className="p-4 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all opacity-0 group-hover:opacity-100"><Trash2 className="w-5 h-5" /></button>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { setActiveBoard(b); setView('PLAY'); }}></div>
+                      <div className="flex justify-between items-start mb-12 relative z-10 pointer-events-none">
                          <h3 className="text-4xl font-black italic uppercase leading-tight group-hover:text-blue-400 transition-colors tracking-tighter">{typeof b.title === 'object' ? b.title[lang] : b.title}</h3>
                          <div className="p-6 bg-slate-950 rounded-[2rem] group-hover:bg-blue-600 group-hover:scale-110 transition-all shadow-2xl"><Play className="fill-current w-8 h-8" /></div>
                       </div>
-                      <div className="flex justify-between items-center border-t border-white/5 pt-10 relative z-10">
+                      <div className="flex justify-between items-center border-t border-white/5 pt-10 relative z-10 pointer-events-none">
                          <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em] mb-1">{t('rounds')}</span>
                             <span className="text-2xl font-black text-white">{b.questions.length}</span>
